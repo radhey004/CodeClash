@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  compiler:
+    build: .
+    ports:
+      - "3000:8080"
+    environment:
+      - PORT=8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    container_name: codeclash-compiler
