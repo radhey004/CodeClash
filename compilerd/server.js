@@ -52,6 +52,6 @@ app.get('/', (req, res) => {
     return res.send('Compiler is up and working')
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     l.info(`Server started at port: ${PORT}`)
 })
