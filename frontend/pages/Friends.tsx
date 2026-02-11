@@ -63,7 +63,7 @@ export default function Friends() {
 
   useEffect(() => {
     // Setup socket connection
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://codeclash-2-g5un.onrender.com');
     setSocket(newSocket);
 
     newSocket.on('connect', () => {

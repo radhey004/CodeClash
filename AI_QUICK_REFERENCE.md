@@ -285,7 +285,7 @@ cd compilerd && npm start
 tail -f backend/logs/combined.log
 
 # Test problem generation
-curl http://localhost:5000/api/problems/random
+curl https://codeclash-2-g5un.onrender.com/api/problems/random
 
 # Monitor Langfuse
 open https://cloud.langfuse.com

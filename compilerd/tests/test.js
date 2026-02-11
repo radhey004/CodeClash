@@ -2,7 +2,7 @@ const axios = require('axios')
 const { testCases } = require('./data/testJson')
 const { describe, expect, it } = require('@jest/globals')
 
-const ENDPOINT = process.env.ENDPOINT || 'http://localhost:3000/api/execute/'
+const ENDPOINT = process.env.ENDPOINT || 'https://codeclash-czhz.onrender.com/api/execute/'
 
 describe('Tests', () => {
     for (const testCase of testCases) {

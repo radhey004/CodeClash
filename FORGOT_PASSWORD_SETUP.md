@@ -40,7 +40,7 @@ Create a `.env` file in the `backend` directory:
 ```env
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASSWORD=your_16_char_app_password
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=https://gocodeclash.vercel.app/
 ```
 
 ### 2. Using Other Email Providers
@@ -95,7 +95,7 @@ const createTransporter = () => {
    cd frontend
    npm run dev
    ```
-5. Navigate to `http://localhost:5173/login`
+5. Navigate to `https://gocodeclash.vercel.app/login`
 6. Click "Forgot Password?"
 7. Enter a registered email
 8. Check your email inbox for reset link

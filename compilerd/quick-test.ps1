@@ -4,7 +4,7 @@ Write-Host "  Compilerd Quick Test" -ForegroundColor Cyan
 Write-Host "==================================" -ForegroundColor Cyan
 Write-Host ""
 
-$baseUrl = "http://localhost:3000"
+$baseUrl = "https://codeclash-czhz.onrender.com"
 
 # Test 1: Health Check
 Write-Host "1. Health Check..." -ForegroundColor Yellow

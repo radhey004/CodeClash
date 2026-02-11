@@ -71,7 +71,7 @@ app.get('/api', (req, res) => {
 app.use(
   '/compiler',
   createProxyMiddleware({
-    target: 'http://localhost:3000',
+    target: 'https://codeclash-czhz.onrender.com',
     changeOrigin: true
   })
 );
@@ -80,7 +80,7 @@ app.use(
 app.use(
   '/',
   createProxyMiddleware({
-    target: 'http://localhost:5173',
+    target: 'https://gocodeclash.vercel.app/',
     changeOrigin: true,
     ws: true
   })

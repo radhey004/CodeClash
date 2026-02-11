@@ -14,7 +14,7 @@ const Matchmaking = () => {
   const [opponent, setOpponent] = useState<any>(null);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://codeclash-2-g5un.onrender.com');
     setSocket(newSocket);
 
     newSocket.on('connect', () => {

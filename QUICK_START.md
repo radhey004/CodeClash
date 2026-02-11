@@ -74,8 +74,8 @@ JWT_SECRET=your-super-secret-key-minimum-32-characters-long
 PORT=5000
 
 # Services
-COMPILER_URL=http://localhost:3000
-FRONTEND_URL=http://localhost:5173
+COMPILER_URL=https://codeclash-czhz.onrender.com
+FRONTEND_URL=https://gocodeclash.vercel.app/
 
 # Environment
 NODE_ENV=development
@@ -138,7 +138,7 @@ npm run dev
 ```bash
 npm run dev
 ```
-✓ Should show: `Local: http://localhost:5173/`
+✓ Should show: `Local: https://gocodeclash.vercel.app/`
 
 ---
 
@@ -148,7 +148,7 @@ npm run dev
 
 **Browser Window 1 (Normal Mode):**
 
-1. Open: http://localhost:5173
+1. Open: https://gocodeclash.vercel.app/
 2. Click **"Get Started"** or **"Register"**
 3. Register with:
    - Username: `Warrior1`
@@ -158,7 +158,7 @@ npm run dev
 
 **Browser Window 2 (Incognito/Private Mode):**
 
-1. Open: http://localhost:5173 (in Incognito)
+1. Open: https://gocodeclash.vercel.app/ (in Incognito)
 2. Click **"Get Started"** or **"Register"**  
 3. Register with:
    - Username: `Warrior2`

@@ -68,8 +68,8 @@ MONGODB_URI=mongodb://localhost:27017/codeclash
 JWT_SECRET=your-super-secret-key-min-32-characters
 GEMINI_API_KEY=your_gemini_api_key_here
 PORT=5000
-COMPILER_URL=http://localhost:3000
-FRONTEND_URL=http://localhost:5173
+COMPILER_URL=https://codeclash-czhz.onrender.com
+FRONTEND_URL=https://gocodeclash.vercel.app/
 ```
 
 2. **Get Gemini API Key:**
@@ -77,10 +77,9 @@ FRONTEND_URL=http://localhost:5173
    - Sign in and create an API key
    - Add to `.env` file
 
-3. **Start services:**
-- 🌐 Frontend: http://localhost:5173
-- 🔧 Backend: http://localhost:5000  
-- ⚙️ Compiler: http://localhost:3000
+- 🌐 Frontend: https://gocodeclash.vercel.app/
+- 🔧 Backend: https://codeclash-2-g5un.onrender.com  
+- ⚙️ Compiler: https://codeclash-czhz.onrender.com
 
 📖 **Detailed guide:** See [QUICK_START.md](./QUICK_START.md)
 

@@ -88,8 +88,8 @@ Create `.env` in **root directory**:
 
 ```env
 # API Configuration
-VITE_API_URL=http://localhost:5000
-VITE_SOCKET_URL=http://localhost:5000
+VITE_API_URL=https://codeclash-2-g5un.onrender.com
+VITE_SOCKET_URL=https://codeclash-2-g5un.onrender.com
 
 # Environment
 VITE_NODE_ENV=development
@@ -112,8 +112,8 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-32-chars
 JWT_EXPIRE=7d
 
 # Services
-COMPILER_URL=http://localhost:3000
-FRONTEND_URL=http://localhost:5173
+COMPILER_URL=https://codeclash-czhz.onrender.com
+FRONTEND_URL=https://gocodeclash.vercel.app/
 
 # Optional: Email (for future features)
 EMAIL_HOST=smtp.gmail.com
@@ -377,7 +377,7 @@ server {
 
     # Backend API
     location /api {
-        proxy_pass http://localhost:5000;
+        proxy_pass https://codeclash-2-g5un.onrender.com;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -387,7 +387,7 @@ server {
 
     # Socket.IO
     location /socket.io {
-        proxy_pass http://localhost:5000;
+        proxy_pass https://codeclash-2-g5un.onrender.com;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -602,10 +602,10 @@ pm2 logs --lines 100
 sudo systemctl status mongod
 
 # Test backend API
-curl http://localhost:5000/api/health
+curl https://codeclash-2-g5un.onrender.com/api/health
 
 # Test compiler service
-curl http://localhost:3000/health
+curl https://codeclash-czhz.onrender.com/health
 
 # Check nginx config
 sudo nginx -t

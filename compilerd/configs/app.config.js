@@ -9,7 +9,8 @@ module.exports = {
         PATH: "/tmp/database.db",
     },
     geminiConfig: {
-        API_KEY: process.env.GEMINI_API_KEY
+        API_KEY: process.env.GEMINI_API_KEY,
+        SUBJECTIVE_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
     },
     langfuseConfig: {
         publicKey:process.env.LANGFUSE_PUBLIC_KEY, 
