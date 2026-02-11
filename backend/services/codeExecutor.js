@@ -4,7 +4,7 @@ const LANGUAGE_MAP = {
   c: 'c', cpp: 'cpp', java: 'java', python: 'python', javascript: 'nodejs'
 };
 
-const COMPILER_URL = process.env.COMPILER_URL || 'https://codeclash-czhz.onrender.com';
+const COMPILER_URL = process.env.COMPILER_SERVICE_URL || 'https://codeclash-czhz.onrender.com';
 
 const normalizeOutput = (str) => str ? str.toString().replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').map(line => line.trimEnd()).join('\n').trim() : '';
 
