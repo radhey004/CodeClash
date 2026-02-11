@@ -2,7 +2,7 @@ const { CPP, C, PYTHON, JAVA, NODEJS, RUBY, PROMPTV1, PROMPTV2, PROMPTV3 } = req
 const ONE_MB = 1024 // ulimit uses Kilobyte as base unit
 const ALLOWED_RAM = process.env.ALLOWED_RAM || 512
 const { 
-    openaiConfig,
+    geminiConfig,
 } = require('../configs/app.config')
 
 const LANGUAGES_CONFIG = {
@@ -49,13 +49,13 @@ const LANGUAGES_CONFIG = {
         memory: ALLOWED_RAM * ONE_MB,
     },
     [PROMPTV1]: {
-        model: 'gpt-4-1106-preview',
+        model: "gemini-2.5-flash-lite",
     },
     [PROMPTV2]: {
-        model: openaiConfig.SUBJECTIVE_OPENAI_MODEL,
+        model: geminiConfig.SUBJECTIVE_MODEL,
     },
     [PROMPTV3]: {
-        model: 'gpt-4o-2024-05-13',
+        model: "gemini-2.5-flash-lite",
     },
 }
 
