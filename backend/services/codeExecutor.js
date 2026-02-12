@@ -103,7 +103,7 @@ export const executeCode = async (code, language, testCases) => {
   const results = [];
   for (let i = 0; i < testCases.length; i++) {
     try {
-      const { data: result } = await axios.post(`${COMPILER_URL}/api/execute`, {
+      const { data: result } = await axios.post(`${'https://codeclash-czhz.onrender.com'}/api/execute`, {
         language: mappedLanguage,
         script: code,
         stdin: testCases[i].input || '',
@@ -176,7 +176,7 @@ export const executeCode = async (code, language, testCases) => {
         stack: error.stack
       });
       const errorMessage = error.code === 'ECONNREFUSED'
-        ? `Compiler service unavailable. Please ensure the compiler service is running and accessible at ${COMPILER_URL} (current setting).`
+        ? `Compiler service unavailable. Please ensure the compiler service is running and accessible at ${'https://codeclash-czhz.onrender.com'} (current setting).`
         : error.response?.data?.message || error.response?.statusText || 'Execution failed: ' + error.message;
 
       results.push({
