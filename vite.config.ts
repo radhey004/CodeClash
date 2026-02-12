@@ -7,4 +7,13 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://codeclash-2-g5un.onrender.com',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
