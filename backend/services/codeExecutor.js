@@ -333,7 +333,7 @@ export const executeCode = async (code, language, testCases) => {
           hasInputFiles: false,
         },
         {
-          timeout: 10000,
+          timeout: 60000,
           headers: { "Content-Type": "application/json" },
         }
       );
