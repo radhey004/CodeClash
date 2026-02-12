@@ -748,7 +748,7 @@ const Arena = () => {
       {showLeaveConfirm && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#282828] border border-gray-700 rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold text-white mb-4">Leave Battle?</h2>
+            <h2 className="text-xl font-bold text-white mb-4">Leave Match?</h2>
             <p className="text-gray-400 mb-6">
               Are you sure you want to leave? You will not be able to rejoin this battle.
             </p>
