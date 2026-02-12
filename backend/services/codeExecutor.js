@@ -167,6 +167,14 @@ export const executeCode = async (code, language, testCases) => {
         isHidden: testCases[i].isHidden || false
       });
     } catch (error) {
+      // Enhanced logging for debugging
+      console.error('Error executing code via compiler service:', {
+        message: error.message,
+        code: error.code,
+        responseData: error.response?.data,
+        responseStatus: error.response?.status,
+        stack: error.stack
+      });
       const errorMessage = error.code === 'ECONNREFUSED' 
         ? 'Compiler service unavailable. Please ensure the compiler is running on port 3000.'
         : error.response?.data?.message || error.response?.statusText || 'Execution failed: ' + error.message;
