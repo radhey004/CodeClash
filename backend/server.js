@@ -67,10 +67,14 @@ app.get('/api', (req, res) => {
   res.json({ message: 'CodeClash API is running' });
 });
 
-
-
-
-   
+// Compiler service proxy
+app.use(
+  '/compiler',
+  createProxyMiddleware({
+    target: 'https://codeclash-czhz.onrender.com',
+    changeOrigin: true
+  })
+);
 
 // React frontend proxy - Must come LAST as catch-all
 
