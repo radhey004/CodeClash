@@ -77,14 +77,27 @@ app.use(
 );
 
 // React frontend proxy - Must come LAST as catch-all
-app.use(
-  '/',
-  createProxyMiddleware({
-    target: 'https://gocodeclash.vercel.app/',
-    changeOrigin: true,
-    ws: true
-  })
-);
+
+// Serve frontend index.html for unknown routes (SPA fallback)
+import { existsSync } from 'fs';
+const frontendPath = join(__dirname, '../frontend');
+const indexHtmlPath = join(frontendPath, 'index.html');
+
+if (existsSync(indexHtmlPath)) {
+  app.use('*', (req, res) => {
+    res.sendFile(indexHtmlPath);
+  });
+} else {
+  // If index.html doesn't exist locally, fallback to proxy
+  app.use(
+    '/',
+    createProxyMiddleware({
+      target: 'https://gocodeclash.vercel.app/',
+      changeOrigin: true,
+      ws: true
+    })
+  );
+}
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
