@@ -175,8 +175,8 @@ export const executeCode = async (code, language, testCases) => {
         responseStatus: error.response?.status,
         stack: error.stack
       });
-      const errorMessage = error.code === 'ECONNREFUSED' 
-        ? 'Compiler service unavailable. Please ensure the compiler is running on port 3000.'
+      const errorMessage = error.code === 'ECONNREFUSED'
+        ? `Compiler service unavailable. Please ensure the compiler service is running and accessible at ${COMPILER_URL} (current setting).`
         : error.response?.data?.message || error.response?.statusText || 'Execution failed: ' + error.message;
 
       results.push({
