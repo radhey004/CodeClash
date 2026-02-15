@@ -7,8 +7,20 @@ const getAuthHeader = (): Record<string, string> => {
 
 const fetchAPI = async (url: string, options: RequestInit = {}) => {
   const response = await fetch(url, options);
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message);
+  let data;
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch (e) {
+      throw new Error('Invalid JSON response from server.');
+    }
+  } else {
+    // Try to get text for debugging
+    const text = await response.text();
+    throw new Error(`Expected JSON but got: ${text || 'empty response'}`);
+  }
+  if (!response.ok) throw new Error(data?.message || 'Request failed');
   return data;
 };
 
