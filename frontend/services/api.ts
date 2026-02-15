@@ -1,4 +1,4 @@
-const API_URL = 'https://codeclash-2-g5un.onrender.com/api';
+const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 const getAuthHeader = (): Record<string, string> => {
   const token = localStorage.getItem('token');
