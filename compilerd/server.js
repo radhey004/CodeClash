@@ -47,7 +47,7 @@ app.use(
     express.urlencoded({
         extended: true,
         limit: '2mb',
-        parameterLimit: 1000000,
+        parameterLimit: 10000,
     }),
 )
 
@@ -86,9 +86,47 @@ io.on('connection', (socket) => {
             };
             // No real res object needed, just for compatibility
             const res = {};
-            const result = await codeService.execute(req, res);
-            // Emit result back to the client
-            socket.emit('submission-result', result);
+            const execResult = await codeService.execute(req, res);
+
+            // Transform result for frontend
+            let testCasesPassed = 0;
+            let totalTestCases = 0;
+            let results = [];
+            let success = false;
+
+            // If execResult.results exists, use it; else, try to infer
+            if (Array.isArray(execResult.results)) {
+                results = execResult.results;
+                totalTestCases = results.length;
+                testCasesPassed = results.filter(r => r.passed).length;
+                success = testCasesPassed === totalTestCases && totalTestCases > 0;
+            } else if (typeof execResult.output === 'object' && Array.isArray(execResult.output.results)) {
+                results = execResult.output.results;
+                totalTestCases = results.length;
+                testCasesPassed = results.filter(r => r.passed).length;
+                success = testCasesPassed === totalTestCases && totalTestCases > 0;
+            } else {
+                // Fallback: treat as single test case
+                totalTestCases = 1;
+                testCasesPassed = execResult.error === 0 ? 1 : 0;
+                success = execResult.error === 0;
+                results = [{
+                    passed: success,
+                    inputPreview: req.stdin,
+                    output: execResult.output,
+                    expected: '',
+                    error: execResult.errorMessage || '',
+                }];
+            }
+
+            const transformed = {
+                success,
+                testCasesPassed,
+                totalTestCases,
+                results,
+                ...execResult
+            };
+            socket.emit('submission-result', transformed);
         } catch (err) {
             l.error('Error in submit-code:', err);
             socket.emit('submission-result', { error: 1, errorMessage: err.message || 'Code execution failed.' });
