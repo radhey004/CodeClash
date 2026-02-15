@@ -3,7 +3,16 @@ require('./instrumentation');
 
 
 const express = require('express')
+const http = require('http')
+const { Server } = require('socket.io')
 const app = express()
+const server = http.createServer(app)
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+    }
+})
 const cors = require('cors')
 const compression = require('compression')
 const helmet = require('helmet')
@@ -52,6 +61,17 @@ app.get('/', (req, res) => {
     return res.send('Compiler is up and working')
 })
 
-app.listen(PORT, '0.0.0.0', () => {
-    l.info(`Server started at port: ${PORT}`)
+
+// Basic Socket.IO connection handler
+io.on('connection', (socket) => {
+    l.info('Socket.IO client connected:', socket.id)
+    socket.on('disconnect', () => {
+        l.info('Socket.IO client disconnected:', socket.id)
+    })
+    // You can add more event handlers here, e.g.:
+    // socket.on('submit-code', (data) => { ... })
+})
+
+server.listen(PORT, '0.0.0.0', () => {
+        l.info(`Server (HTTP + Socket.IO) started at port: ${PORT}`)
 })
