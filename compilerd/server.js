@@ -62,15 +62,39 @@ app.get('/', (req, res) => {
 })
 
 
+
+// Import the code execution service
+const codeService = require('./services/code.service.js');
+
 // Basic Socket.IO connection handler
 io.on('connection', (socket) => {
     l.info('Socket.IO client connected:', socket.id)
     socket.on('disconnect', () => {
         l.info('Socket.IO client disconnected:', socket.id)
     })
-    // You can add more event handlers here, e.g.:
-    // socket.on('submit-code', (data) => { ... })
-})
+
+    // Real code submission handler
+    socket.on('submit-code', async (data) => {
+        l.info('Received submit-code event:', data?.userId, data?.language);
+        try {
+            // Prepare a mock req/res for codeService.execute
+            const req = {
+                script: data.code,
+                language: data.language,
+                stdin: data.stdin || '',
+                // Add more fields as needed from data
+            };
+            // No real res object needed, just for compatibility
+            const res = {};
+            const result = await codeService.execute(req, res);
+            // Emit result back to the client
+            socket.emit('submission-result', result);
+        } catch (err) {
+            l.error('Error in submit-code:', err);
+            socket.emit('submission-result', { error: 1, errorMessage: err.message || 'Code execution failed.' });
+        }
+    });
+});
 
 server.listen(PORT, '0.0.0.0', () => {
         l.info(`Server (HTTP + Socket.IO) started at port: ${PORT}`)
