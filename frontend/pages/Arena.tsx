@@ -585,7 +585,7 @@ const Arena = () => {
     if (battle && timeLeft > 0 && !battleComplete) {
       const timer = setInterval(() => {
         setTimeLeft((prev) => Math.max(0, prev - 1));
-      }, 10000);
+      }, 1000);
       return () => clearInterval(timer);
     }
   }, [battle, timeLeft, battleComplete]);
@@ -595,7 +595,7 @@ const Arena = () => {
     if (opponentFinished && lastChanceTime > 0 && !battleComplete) {
       const timer = setInterval(() => {
         setLastChanceTime((prev) => Math.max(0, prev - 1));
-      }, 10000);
+      }, 1000);
       return () => clearInterval(timer);
     }
   }, [opponentFinished, lastChanceTime, battleComplete]);
@@ -631,8 +631,8 @@ const Arena = () => {
         console.warn('No opponent found in battle data');
       }
 
-      const elapsed = Math.floor((Date.now() - new Date(data.startedAt).getTime()) / 10000);
-      const remaining = Math.max(0, data.problem.timeLimit - elapsed);
+      const elapsed = Math.floor((Date.now() - new Date(data.startedAt).getTime()) / 1000);
+      const remaining = Math.max(0, 1800 - elapsed);
       setTimeLeft(remaining);
 
       setCode(getStarterCode(language, data.problem.title));
