@@ -388,7 +388,7 @@ const Arena = () => {
 
     loadBattle();
     
-    const newSocket = io('https://codeclash-2-g5un.onrender.com', {
+    const newSocket = io(import.meta.env.VITE_COMPILER_URL, {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000
@@ -540,7 +540,7 @@ const Arena = () => {
       setShowResultModal(true);
       
       // Update user data
-      fetch('https://codeclash-2-g5un.onrender.com/api/auth/me', {
+      fetch(`${import.meta.env.VITE_COMPILER_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
       .then(r => r.json())
