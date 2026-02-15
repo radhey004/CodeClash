@@ -46,7 +46,7 @@ const PublicProfile = () => {
 
   const loadUser = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_COMPILER_URL}/api/users/${userId}`, {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setUser(response.data);
@@ -64,7 +64,7 @@ const PublicProfile = () => {
     try {
       const data = await friendAPI.searchUsers('');
       // Search for this specific user to get their friendship status
-      const response = await axios.get(`${import.meta.env.VITE_COMPILER_URL}/api/friends/search?query=${userId}`, {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/friends/search?query=${userId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       

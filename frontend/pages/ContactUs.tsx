@@ -26,7 +26,7 @@ const ContactUs = () => {
     e.preventDefault();
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_COMPILER_URL}/api/contact/send`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contact/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

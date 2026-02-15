@@ -14,7 +14,7 @@ const Matchmaking = () => {
   const [opponent, setOpponent] = useState<any>(null);
 
   useEffect(() => {
-    const newSocket = io(import.meta.env.VITE_COMPILER_URL);
+    const newSocket = io(import.meta.env.VITE_BACKEND_URL);
     setSocket(newSocket);
 
     newSocket.on('connect', () => {

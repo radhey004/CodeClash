@@ -1,18 +1,7 @@
 /// <reference types="vite/client" />
 
-
 interface ImportMetaEnv {
-  readonly VITE_COMPILER_URL: string;
   readonly VITE_BACKEND_URL: string;
-  // add other env variables here as needed
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}/// <reference types="vite/client" />
-
-interface ImportMetaEnv {
-  readonly VITE_COMPILER_URL: string;
   // add other env variables here as needed
 }
 

@@ -63,7 +63,7 @@ export default function Friends() {
 
   useEffect(() => {
     // Setup socket connection
-    const newSocket = io(import.meta.env.VITE_COMPILER_URL);
+    const newSocket = io(import.meta.env.VITE_BACKEND_URL);
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
