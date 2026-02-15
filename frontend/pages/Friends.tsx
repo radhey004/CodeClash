@@ -1,9 +1,12 @@
+/// <reference types="vite/client" />
 import { useState, useEffect } from 'react';
 import { friendAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { io, Socket } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
+
+// Vite provides import.meta.env types automatically; no need to redeclare them.
 
 interface User {
   _id: string;

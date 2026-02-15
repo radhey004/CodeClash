@@ -8,6 +8,19 @@ import Editor from '@monaco-editor/react';
 import { getLanguageConfig, getStarterCode } from '../config/languages';
 import EditorialModal from '../components/EditorialModal';
 
+// Import VITE_BACKEND_URL from import.meta.env
+const VITE_BACKEND_URL = (import.meta as any).env.VITE_BACKEND_URL;
+
+// Add Vite env type for TypeScript
+interface ImportMetaEnv {
+  readonly VITE_BACKEND_URL: string;
+  // add other env variables here if needed
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 interface TestCase {
   input: string;
   isHidden: boolean;
@@ -388,10 +401,10 @@ const Arena = () => {
 
     loadBattle();
     
-    const newSocket = io(import.meta.env.VITE_BACKEND_URL, {
+    const newSocket = io((import.meta as any).env.VITE_BACKEND_URL, {
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 10000
     });
     setSocket(newSocket);
 
@@ -540,7 +553,7 @@ const Arena = () => {
       setShowResultModal(true);
       
       // Update user data
-      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/me`, {
+      fetch(`${VITE_BACKEND_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
       .then(r => r.json())
@@ -572,7 +585,7 @@ const Arena = () => {
     if (battle && timeLeft > 0 && !battleComplete) {
       const timer = setInterval(() => {
         setTimeLeft((prev) => Math.max(0, prev - 1));
-      }, 1000);
+      }, 10000);
       return () => clearInterval(timer);
     }
   }, [battle, timeLeft, battleComplete]);
@@ -582,7 +595,7 @@ const Arena = () => {
     if (opponentFinished && lastChanceTime > 0 && !battleComplete) {
       const timer = setInterval(() => {
         setLastChanceTime((prev) => Math.max(0, prev - 1));
-      }, 1000);
+      }, 10000);
       return () => clearInterval(timer);
     }
   }, [opponentFinished, lastChanceTime, battleComplete]);
@@ -618,7 +631,7 @@ const Arena = () => {
         console.warn('No opponent found in battle data');
       }
 
-      const elapsed = Math.floor((Date.now() - new Date(data.startedAt).getTime()) / 1000);
+      const elapsed = Math.floor((Date.now() - new Date(data.startedAt).getTime()) / 10000);
       const remaining = Math.max(0, data.problem.timeLimit - elapsed);
       setTimeLeft(remaining);
 
@@ -678,8 +691,9 @@ const Arena = () => {
         setSubmitting(false);
         alert('Connection lost. Please try again.');
       }
-    }, 1000);
+    }, 10000); // 10 second delay to simulate processing time and prevent spamming
   };
+
 
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
