@@ -1,4 +1,3 @@
-
 console.log('VITE_BACKEND_URL:', import.meta.env.VITE_BACKEND_URL);
 const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
@@ -90,8 +89,13 @@ export const leaderboardAPI = {
 };
 
 export const friendAPI = {
-  searchUsers: (query: string) =>
-    fetchAPI(`${API_URL}/friends/search?query=${encodeURIComponent(query)}`, { headers: getAuthHeader() }),
+  searchUsers: (query: string) => {
+    if (!query || query.trim().length < 2) {
+      // Prevent API call if query is too short
+      return Promise.resolve({ users: [] });
+    }
+    return fetchAPI(`${API_URL}/friends/search?query=${encodeURIComponent(query)}`, { headers: getAuthHeader() });
+  },
   getFriends: () => fetchAPI(`${API_URL}/friends`, { headers: getAuthHeader() }),
   getPendingRequests: () => fetchAPI(`${API_URL}/friends/pending`, { headers: getAuthHeader() }),
   getSentRequests: () => fetchAPI(`${API_URL}/friends/sent`, { headers: getAuthHeader() }),
