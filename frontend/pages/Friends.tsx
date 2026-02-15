@@ -548,7 +548,11 @@ export default function Friends() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim().length >= 2) {
+                    handleSearch();
+                  }
+                }}
                 placeholder="Search users by username..."
                 className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
               />
