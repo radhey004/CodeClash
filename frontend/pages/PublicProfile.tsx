@@ -60,15 +60,8 @@ const PublicProfile = () => {
 
   const loadFriendshipStatus = async () => {
     if (!userId || userId === currentUser?._id) return;
-    
     try {
-      const data = await friendAPI.searchUsers('');
-      // Search for this specific user to get their friendship status
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/friends/search?query=${userId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      // Actually, let's get the user's friends list and check status
+      // Get the user's friends, pending, and sent requests
       const [friendsData, pendingData, sentData] = await Promise.all([
         friendAPI.getFriends(),
         friendAPI.getPendingRequests(),
