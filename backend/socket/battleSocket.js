@@ -635,12 +635,18 @@ export const setupBattleSocket = (io) => {
             .populate('winner', 'username level xp');
           
           // Get submissions for editorial
-          const finalPlayer1Submission = finalBattle.submissions.find(
-            s => s.userId.toString() === finalBattle.players[0]._id.toString()
-          );
-          const finalPlayer2Submission = finalBattle.submissions.find(
-            s => s.userId.toString() === finalBattle.players[1]._id.toString()
-          );
+          let finalPlayer1Submission = null;
+          let finalPlayer2Submission = null;
+          if (Array.isArray(finalBattle.players) && finalBattle.players.length > 0 && finalBattle.players[0] && finalBattle.players[0]._id) {
+            finalPlayer1Submission = finalBattle.submissions.find(
+              s => s.userId?.toString() === finalBattle.players[0]._id.toString()
+            );
+          }
+          if (Array.isArray(finalBattle.players) && finalBattle.players.length > 1 && finalBattle.players[1] && finalBattle.players[1]._id) {
+            finalPlayer2Submission = finalBattle.submissions.find(
+              s => s.userId?.toString() === finalBattle.players[1]._id.toString()
+            );
+          }
           
           // Generate AI editorial even when opponent leaves
           let aiEditorial = null;
