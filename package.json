@@ -10,13 +10,12 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "backend": "cd backend && npm start",
-    "compiler": "cd backend2/code\\ compiler/compilerd && npm start",
-    "seed": "cd backend && node scripts/seedProblems.js",
+    "compiler": "cd compilerd && npm start",
     "start:all": "concurrently \"npm run compiler\" \"npm run backend\" \"npm run dev\" --names \"COMPILER,BACKEND,FRONTEND\" --prefix-colors \"blue,green,yellow\""
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
-    "axios": "^1.13.4",
+    "axios": "^1.7.0",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

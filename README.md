@@ -50,7 +50,7 @@ Git
 git clone <your-repo-url> codeclash && cd codeclash
 
 # Install all dependencies
-npm install && cd backend && npm install && cd "../code compiler/compilerd" && npm install && cd ../..
+npm install && cd backend && npm install && cd ../compilerd && npm install && cd ..
 
 # Start all services (Windows)
 .\start.ps1

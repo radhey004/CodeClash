@@ -1,6 +1,7 @@
 {
   "name": "compilerd",
   "version": "0.4.2",
+  "type": "module",
   "description": "",
   "main": "server.js",
   "scripts": {
@@ -16,7 +17,7 @@
     "@langfuse/tracing": "4.4.9",
     "@opentelemetry/sdk-node": "0.208.0",
     "@supercharge/promise-pool": "^2.3.2",
-    "axios": "^1.13.5",
+    "axios": "^1.7.0",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
