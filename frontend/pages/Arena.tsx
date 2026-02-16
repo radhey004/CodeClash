@@ -691,7 +691,7 @@ const Arena = () => {
         setSubmitting(false);
         alert('Connection lost. Please try again.');
       }
-    }, 10000); // 10 second delay to simulate processing time and prevent spamming
+    }, 50000); // 50 second delay to simulate processing time and prevent spamming
   };
 
 
