@@ -6,11 +6,10 @@
 **Where Developers Battle Through Code**
 
 ![Version](https://img.shields.io/badge/version-2.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)
 
-[🚀 Quick Start](./QUICK_START.md) • [📖 Documentation](./DEPLOYMENT.md) • [🏗️ Architecture](./ARCHITECTURE.md)
+[🚀 Quick Start](./QUICK_START.md) • [🏗️ Architecture](./ARCHITECTURE.md)
 
 </div>
 
@@ -77,9 +76,6 @@ FRONTEND_URL=https://gocodeclash.vercel.app/
    - Sign in and create an API key
    - Add to `.env` file
 
-- 🌐 Frontend: https://gocodeclash.vercel.app/
-- 🔧 Backend: https://codeclash-2-g5un.onrender.com  
-- ⚙️ Compiler: https://codeclash-czhz.onrender.com
 
 📖 **Detailed guide:** See [QUICK_START.md](./QUICK_START.md)
 
@@ -199,15 +195,6 @@ codeclash/
 - **Battle History** - View recent battles
 - **Public Profiles** - Check out other players' stats
 
----
-
-## 📖 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [QUICK_START.md](./QUICK_START.md) | Get started in 5 minutes |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design & flow diagrams |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Production deployment guide |
 
 ---
 
@@ -219,23 +206,6 @@ codeclash/
 - **Coding Competitions** - Host live coding tournaments
 - **Educational Tool** - Teach data structures and algorithms
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how:
-
-1. **Fork** the repository
-2. **Create** feature branch (`git checkout -b feature/AmazingFeature`)
-3. **Commit** changes (`git commit -m 'Add AmazingFeature'`)  
-4. **Push** to branch (`git push origin feature/AmazingFeature`)
-5. **Open** Pull Request
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
