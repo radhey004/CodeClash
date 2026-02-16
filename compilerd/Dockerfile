@@ -76,7 +76,6 @@ RUN mkdir -p /usr/include/bits && \
 #include <valarray>
 #include <vector>
 #endif
-EOF
 
 RUN set -ex && \
     rm -f /usr/libexec/gcc/x86_64-alpine-linux-musl/6.4.0/cc1obj && \

@@ -179,6 +179,7 @@ Requirements:
 - Time limit should be 300-600ms
 - IMPORTANT: Use plain text for math (e.g., "N nodes", "<=", ">=", "*", "sum of", "product of") instead of LaTeX notation to ensure JSON compatibility
 - Keep descriptions clear but avoid special characters that need escaping
+- ALL string values in the JSON must be valid JSON strings: escape all newlines (\\n), double quotes (\\"), and backslashes (\\\\) inside string values. Do NOT use unescaped newlines or quotes inside any string value.
 
 CRITICAL TEST CASE REQUIREMENTS:
 1. You MUST manually verify each test case by working through the problem logic step-by-step
