@@ -1062,31 +1062,27 @@ export const setupBattleSocket = (io) => {
             await practiceUser.save();
           }
           
-          // Generate AI editorial for practice mode
+          // Generate AI editorial and improvements concurrently for practice mode
           let practiceEditorial = null;
           let practiceImprovements = [];
           try {
-            practiceEditorial = await generateEditorial(
-              problem,
-              { code, language },
-              {
-                testCasesPassed,
-                totalTestCases: problem.testCases.length,
-                executionTime
-              }
-            );
-            
-            // Generate AI improvements for practice mode
-            practiceImprovements = await generateCodeImprovements(
-              problem,
-              code,
-              language,
-              testCasesPassed,
-              problem.testCases.length
-            );
-            
-            // Update battle's problem editorial
-            battle.problem.editorial = practiceEditorial;
+            const [editResult, improvResult] = await Promise.allSettled([
+              generateEditorial(
+                problem,
+                { code, language },
+                { testCasesPassed, totalTestCases: problem.testCases.length, executionTime }
+              ),
+              generateCodeImprovements(
+                problem, code, language, testCasesPassed, problem.testCases.length
+              )
+            ]);
+
+            practiceEditorial = editResult.status === 'fulfilled' ? editResult.value : null;
+            practiceImprovements = improvResult.status === 'fulfilled' ? improvResult.value : [];
+
+            if (practiceEditorial) {
+              battle.problem.editorial = practiceEditorial;
+            }
           } catch (error) {
             console.error('Error generating practice editorial:', error);
             practiceEditorial = problem.editorial;
@@ -1140,62 +1136,56 @@ export const setupBattleSocket = (io) => {
             s => s.userId.toString() === finalBattle.players[1]._id.toString()
           );
 
-          // Generate AI editorial for the battle
-          let aiEditorial = null;
-          try {
-            // Use the winner's solution for editorial generation, or first submission if no clear winner
-            const winnerSubmission = finalBattle.winner 
-              ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
-              : player1Submission || player2Submission;
-              
-            if (winnerSubmission && finalBattle.problem) {
-              aiEditorial = await generateEditorial(
-                finalBattle.problem,
-                {
-                  code: winnerSubmission.code,
-                  language: winnerSubmission.language
-                },
-                {
-                  testCasesPassed: winnerSubmission.testCasesPassed,
-                  totalTestCases: winnerSubmission.totalTestCases,
-                  executionTime: winnerSubmission.executionTime
-                }
-              );
-              
-              // Update the battle's problem editorial
-              finalBattle.problem.editorial = aiEditorial;
-              await finalBattle.save();
-            }
-          } catch (error) {
-            console.error('Error generating AI editorial:', error);
-            // Use existing editorial as fallback
-            aiEditorial = finalBattle.problem.editorial;
-          }
+          // Use the winner's solution for editorial generation
+          const winnerSubmission = finalBattle.winner
+            ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
+            : player1Submission || player2Submission;
 
-          // Generate AI improvements for both players' code
-          let aiImprovements = {};
-          try {
-            if (player1Submission) {
-              aiImprovements.player1 = await generateCodeImprovements(
-                finalBattle.problem,
-                player1Submission.code,
-                player1Submission.language,
-                player1Submission.testCasesPassed,
-                player1Submission.totalTestCases
-              );
-            }
-            if (player2Submission) {
-              aiImprovements.player2 = await generateCodeImprovements(
-                finalBattle.problem,
-                player2Submission.code,
-                player2Submission.language,
-                player2Submission.testCasesPassed,
-                player2Submission.totalTestCases
-              );
-            }
-          } catch (error) {
-            console.error('Error generating AI improvements:', error);
-            aiImprovements = {};
+          // Run all Gemini calls concurrently to reduce total wait time and API hammering
+          const [editorialResult, p1ImprovementsResult, p2ImprovementsResult] = await Promise.allSettled([
+            // Editorial
+            (winnerSubmission && finalBattle.problem)
+              ? generateEditorial(
+                  finalBattle.problem,
+                  { code: winnerSubmission.code, language: winnerSubmission.language },
+                  {
+                    testCasesPassed: winnerSubmission.testCasesPassed,
+                    totalTestCases: winnerSubmission.totalTestCases,
+                    executionTime: winnerSubmission.executionTime
+                  }
+                )
+              : Promise.resolve(null),
+            // Player 1 improvements
+            player1Submission
+              ? generateCodeImprovements(
+                  finalBattle.problem,
+                  player1Submission.code,
+                  player1Submission.language,
+                  player1Submission.testCasesPassed,
+                  player1Submission.totalTestCases
+                )
+              : Promise.resolve([]),
+            // Player 2 improvements
+            player2Submission
+              ? generateCodeImprovements(
+                  finalBattle.problem,
+                  player2Submission.code,
+                  player2Submission.language,
+                  player2Submission.testCasesPassed,
+                  player2Submission.totalTestCases
+                )
+              : Promise.resolve([])
+          ]);
+
+          const aiEditorial = editorialResult.status === 'fulfilled' ? editorialResult.value : null;
+          const aiImprovements = {
+            player1: p1ImprovementsResult.status === 'fulfilled' ? p1ImprovementsResult.value : [],
+            player2: p2ImprovementsResult.status === 'fulfilled' ? p2ImprovementsResult.value : []
+          };
+
+          if (aiEditorial) {
+            finalBattle.problem.editorial = aiEditorial;
+            await finalBattle.save();
           }
 
           // Get XP changes from battle state
