@@ -9,12 +9,12 @@ const Matchmaking = () => {
   const { user } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [searching, setSearching] = useState(false);
-  const [queueSize, setQueueSize] = useState(0);
+  const [, setQueueSize] = useState(0);
   const [matchFound, setMatchFound] = useState(false);
   const [opponent, setOpponent] = useState<any>(null);
 
   useEffect(() => {
-    const newSocket = io(import.meta.env.VITE_BACKEND_URL);
+    const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000');
     setSocket(newSocket);
 
     newSocket.on('connect', () => {

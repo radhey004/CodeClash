@@ -66,7 +66,7 @@ export default function Friends() {
 
   useEffect(() => {
     // Setup socket connection
-    const newSocket = io(import.meta.env.VITE_BACKEND_URL);
+    const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000');
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -548,7 +548,7 @@ export default function Friends() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === 'Enter' && searchQuery.trim().length >= 2) {
                     handleSearch();
                   }

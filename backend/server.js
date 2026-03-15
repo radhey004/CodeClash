@@ -71,10 +71,15 @@ app.get('/api', (req, res) => {
 app.use(
   '/compiler',
   createProxyMiddleware({
-    target: 'https://codeclash-czhz.onrender.com',
+    target: process.env.COMPILER_SERVICE_URL || 'http://localhost:3000',
     changeOrigin: true
   })
 );
+
+// Return JSON 404 for any unmatched /api routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'API endpoint not found' });
+});
 
 // React frontend proxy - Must come LAST as catch-all
 
@@ -92,7 +97,7 @@ if (existsSync(indexHtmlPath)) {
   app.use(
     '/',
     createProxyMiddleware({
-      target: 'https://gocodeclash.vercel.app/',
+      target: process.env.FRONTEND_URL || 'http://localhost:5173',
       changeOrigin: true,
       ws: true
     })
