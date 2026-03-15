@@ -1,25 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { battleAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Clock, Code, Send, CheckCircle, XCircle, User, Trophy, Zap, ChevronRight, Play, Settings, RotateCcw, Award, Target } from 'lucide-react';
+import { Clock, Code, CheckCircle, XCircle, Trophy, Play, Award } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { getLanguageConfig, getStarterCode } from '../config/languages';
 import EditorialModal from '../components/EditorialModal';
 
 // Import VITE_BACKEND_URL from import.meta.env
-const VITE_BACKEND_URL = (import.meta as any).env.VITE_BACKEND_URL;
-
-// Add Vite env type for TypeScript
-interface ImportMetaEnv {
-  readonly VITE_BACKEND_URL: string;
-  // add other env variables here if needed
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
+const VITE_BACKEND_URL = (import.meta as any).env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 interface TestCase {
   input: string;
@@ -58,12 +48,12 @@ const Arena = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [result, setResult] = useState<any>(null);
   const [opponent, setOpponent] = useState<any>(null);
-  const [opponentStatus, setOpponentStatus] = useState<string>('Coding...');
+  const [, setOpponentStatus] = useState<string>('Coding...');
   const [battleComplete, setBattleComplete] = useState(false);
   const [isWinner, setIsWinner] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [, setPendingNavigation] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'description' | 'submission'>('description');
   const [opponentLeft, setOpponentLeft] = useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = useState(50); // Percentage
@@ -71,15 +61,14 @@ const Arena = () => {
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [showEditorial, setShowEditorial] = useState(false);
   const [editorialData, setEditorialData] = useState<any>(null);
-  const [myScore, setMyScore] = useState<any>(null);
-  const [opponentScore, setOpponentScore] = useState<any>(null);
+  const [, setMyScore] = useState<any>(null);
+  const [, setOpponentScore] = useState<any>(null);
   const [timeExpired, setTimeExpired] = useState(false);
   const [opponentFinished, setOpponentFinished] = useState(false);
   const [lastChanceTime, setLastChanceTime] = useState(0);
   const [xpReward, setXpReward] = useState<any>(null);
   const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isLeavingBattle = useRef<boolean>(false);
 
   // Prevent re-entry to already left battles
   useEffect(() => {
@@ -401,7 +390,7 @@ const Arena = () => {
 
     loadBattle();
     
-    const newSocket = io((import.meta as any).env.VITE_BACKEND_URL, {
+    const newSocket = io(VITE_BACKEND_URL, {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 10000
@@ -449,7 +438,7 @@ const Arena = () => {
       setOpponentScore(score || 0);
     });
 
-    newSocket.on('opponent-finished', ({ message, timeRemaining }) => {
+    newSocket.on('opponent-finished', ({ timeRemaining }) => {
       setOpponentFinished(true);
       setLastChanceTime(timeRemaining);
       setOpponentStatus('\uD83C\uDFAF SOLVED! - Last chance!');
@@ -678,20 +667,18 @@ const Arena = () => {
     setSubmitting(true);
     
     console.log('Submitting code...', { battleId, userId: user._id, language });
-    
-    setTimeout(() => {
-      if (socket && socket.connected) {
-        socket.emit('submit-code', {
-          battleId,
-          userId: user._id,
-          code,
-          language
-        });
-      } else {
-        setSubmitting(false);
-        alert('Connection lost. Please try again.');
-      }
-    }, 10000); // 10 second delay to simulate processing time and prevent spamming
+
+    if (socket && socket.connected) {
+      socket.emit('submit-code', {
+        battleId,
+        userId: user._id,
+        code,
+        language
+      });
+    } else {
+      setSubmitting(false);
+      alert('Connection lost. Please try again.');
+    }
   };
 
 
