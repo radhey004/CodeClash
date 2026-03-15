@@ -76,6 +76,11 @@ app.use(
   })
 );
 
+// Return JSON 404 for any unmatched /api routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'API endpoint not found' });
+});
+
 // React frontend proxy - Must come LAST as catch-all
 
 // Serve frontend index.html for unknown routes (SPA fallback)

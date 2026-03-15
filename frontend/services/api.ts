@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
-console.log('VITE_BACKEND_URL:', import.meta.env.VITE_BACKEND_URL);
-const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
+const API_URL = import.meta.env.VITE_BACKEND_URL
+  ? `${import.meta.env.VITE_BACKEND_URL}/api`
+  : '/api';
 
 const getAuthHeader = (): Record<string, string> => {
   const token = localStorage.getItem('token');
