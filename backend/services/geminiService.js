@@ -137,6 +137,48 @@ const getGenAI = () => {
 };
 
 /**
+ * Robust JSON sanitizer: walks character-by-character and escapes
+ * invalid characters inside JSON string values.
+ */
+const sanitizeJson = (raw) => {
+  let out = '';
+  let inString = false;
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (inString) {
+      if (ch === '\\') {
+        const next = raw[i + 1];
+        if (next && '"\\bfnrtu/'.includes(next)) {
+          out += ch + next;
+          i++;
+        } else {
+          out += '\\\\';
+        }
+      } else if (ch === '"') {
+        inString = false;
+        out += ch;
+      } else if (ch === '\n') {
+        out += '\\n';
+      } else if (ch === '\r') {
+        out += '\\r';
+      } else if (ch === '\t') {
+        out += '\\t';
+      } else if (ch.charCodeAt(0) < 0x20) {
+        // Skip other control characters
+      } else {
+        out += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inString = true;
+      }
+      out += ch;
+    }
+  }
+  return out.replace(/,\s*([}\]])/g, '$1');
+};
+
+/**
  * Generate a coding problem based on user's league, level, and XP
  * @param {Object} userProfile - User profile containing league, level, xp
  * @returns {Promise<Object>} Generated problem
@@ -248,6 +290,7 @@ Make the problem creative and ensure test cases are 100% accurate and properly v
     
     let problemData;
     let lastError = null;
+
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         problemData = JSON.parse(jsonText);
@@ -255,43 +298,21 @@ Make the problem creative and ensure test cases are 100% accurate and properly v
       } catch (parseError) {
         lastError = parseError;
         console.error(`❌ JSON Parse Error (attempt ${attempt + 1}):`, parseError.message);
-        console.error('📄 Problematic JSON text (first 1000 chars):', jsonText.substring(0, 1000));
-        // Try to fix common JSON issues, especially LaTeX notation
-        let fixedJson = jsonText;
-        // Remove trailing commas before } or ]
-        fixedJson = fixedJson.replace(/,\s*([}\]])/g, '$1');
-        // Protect valid JSON escape sequences
-        const escapeMap = new Map();
-        let escapeCounter = 0;
-        fixedJson = fixedJson.replace(/\\["\\\/bfnrtu]/g, (match) => {
-          const placeholder = `___ESCAPE_${escapeCounter++}___`;
-          escapeMap.set(placeholder, match);
-          return placeholder;
-        });
-        // Escape all remaining single backslashes
-        fixedJson = fixedJson.replace(/\\/g, '\\\\');
-        // Restore the original valid escape sequences
-        escapeMap.forEach((value, key) => {
-          fixedJson = fixedJson.replace(key, value);
-        });
-        // Remove actual newlines and tabs
-        fixedJson = fixedJson.replace(/\n/g, ' ').replace(/\t/g, ' ');
-        // Remove any non-printable/control characters
-        fixedJson = fixedJson.replace(/[\x00-\x1F\x7F]/g, '');
-        // Try to parse again
+        console.error('📄 Problematic JSON text (first 500 chars):', jsonText.substring(0, 500));
+
+        // Try sanitized parse
         try {
-          problemData = JSON.parse(fixedJson);
-          console.log('✅ Successfully parsed fixed JSON');
+          problemData = JSON.parse(sanitizeJson(jsonText));
+          console.log('✅ Successfully parsed sanitized JSON');
           break;
-        } catch (secondError) {
-          lastError = secondError;
-          console.error(`❌ Still failed after fixing (attempt ${attempt + 1}):`, secondError.message);
-          console.error('📄 Fixed JSON (first 1000 chars):', fixedJson.substring(0, 1000));
+        } catch (sanitizeError) {
+          lastError = sanitizeError;
+          console.error(`❌ Still failed after sanitizing (attempt ${attempt + 1}):`, sanitizeError.message);
           if (attempt === 0) {
-            // On first failure, try to regenerate problem
+            // On first failure, regenerate from Gemini
             console.warn('🔄 Retrying Gemini API call to regenerate problem...');
             const retryResult = await retryWithBackoff(async () => {
-              const model = getGenAI().getGenerativeModel({ 
+              const model = getGenAI().getGenerativeModel({
                 model: "gemini-2.5-flash-lite",
                 generationConfig: {
                   temperature: 0.7,
@@ -307,13 +328,13 @@ Make the problem creative and ensure test cases are 100% accurate and properly v
               maxDelay: 5000
             });
             jsonText = retryResult.trim();
-            const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-            if (jsonMatch) {
-              jsonText = jsonMatch[1].trim();
+            const retryJsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            if (retryJsonMatch) {
+              jsonText = retryJsonMatch[1].trim();
             } else {
-              const plainJsonMatch = jsonText.match(/\{[\s\S]*\}/);
-              if (plainJsonMatch) {
-                jsonText = plainJsonMatch[0];
+              const plainMatch = jsonText.match(/\{[\s\S]*\}/);
+              if (plainMatch) {
+                jsonText = plainMatch[0];
               }
             }
           }
@@ -453,34 +474,10 @@ Make it educational, encouraging, and modern in tone. If the user's solution was
       editorial = JSON.parse(jsonText);
     } catch (parseError) {
       console.error('❌ Editorial JSON Parse Error:', parseError.message);
-      
-      // Try to fix common JSON issues, especially LaTeX notation
-      let fixedJson = jsonText;
-      
-      const escapeMap = new Map();
-      let escapeCounter = 0;
-      
-      // Protect valid JSON escape sequences
-      fixedJson = fixedJson.replace(/\\["\\\/bfnrtu]/g, (match) => {
-        const placeholder = `___ESCAPE_${escapeCounter++}___`;
-        escapeMap.set(placeholder, match);
-        return placeholder;
-      });
-      
-      // Escape remaining backslashes (LaTeX notation)
-      fixedJson = fixedJson.replace(/\\/g, '\\\\');
-      
-      // Restore valid escape sequences
-      escapeMap.forEach((value, key) => {
-        fixedJson = fixedJson.replace(key, value);
-      });
-      
-      // Remove actual newlines and tabs
-      fixedJson = fixedJson.replace(/\n/g, ' ').replace(/\t/g, ' ');
-      
+
       try {
-        editorial = JSON.parse(fixedJson);
-        console.log('✅ Successfully parsed fixed editorial JSON');
+        editorial = JSON.parse(sanitizeJson(jsonText));
+        console.log('✅ Successfully parsed sanitized editorial JSON');
       } catch (secondError) {
         console.error('❌ Editorial still failed after fixing:', secondError.message);
         throw secondError;
