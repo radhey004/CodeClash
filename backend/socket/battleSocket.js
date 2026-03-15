@@ -4,7 +4,7 @@ import Friend from '../models/Friend.js';
 import matchmakingQueue from '../services/matchmaking.js';
 import { executeCode } from '../services/codeExecutor.js';
 import { analyzeCodeQuality, calculateBattleScore } from '../services/codeQualityAnalyzer.js';
-import { generateProblem, generateEditorial, generateCodeImprovements } from '../services/geminiService.js';
+import { generateProblem, generateEditorial } from '../services/geminiService.js';
 
 /**
  * Helper function to provide a default editorial if AI generation fails
@@ -651,10 +651,10 @@ export const setupBattleSocket = (io) => {
           // Generate AI editorial even when opponent leaves
           let aiEditorial = null;
           try {
-            const winnerSubmission = finalBattle.winner 
+            const winnerSubmission = finalBattle.winner
               ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
               : finalPlayer1Submission || finalPlayer2Submission;
-              
+
             if (winnerSubmission && finalBattle.problem) {
               aiEditorial = await generateEditorial(
                 finalBattle.problem,
@@ -668,7 +668,7 @@ export const setupBattleSocket = (io) => {
                   executionTime: winnerSubmission.executionTime
                 }
               );
-              
+
               finalBattle.problem.editorial = aiEditorial;
               await finalBattle.save();
             }
@@ -676,46 +676,20 @@ export const setupBattleSocket = (io) => {
             console.error('Error generating AI editorial when opponent left:', error);
             aiEditorial = finalBattle.problem.editorial;
           }
-          
-          // Generate AI improvements for both players
-          let aiImprovements = {};
-          try {
-            if (finalPlayer1Submission) {
-              aiImprovements.player1 = await generateCodeImprovements(
-                finalBattle.problem,
-                finalPlayer1Submission.code,
-                finalPlayer1Submission.language,
-                finalPlayer1Submission.testCasesPassed,
-                finalPlayer1Submission.totalTestCases
-              );
-            }
-            if (finalPlayer2Submission) {
-              aiImprovements.player2 = await generateCodeImprovements(
-                finalBattle.problem,
-                finalPlayer2Submission.code,
-                finalPlayer2Submission.language,
-                finalPlayer2Submission.testCasesPassed,
-                finalPlayer2Submission.totalTestCases
-              );
-            }
-          } catch (error) {
-            console.error('Error generating AI improvements when opponent left:', error);
-            aiImprovements = {};
-          }
-          
+
           io.to(battleId).emit('battle-complete', {
             winner: finalBattle.winner,
             battle: finalBattle,
             opponentLeft: true,
             editorial: aiEditorial || finalBattle.problem.editorial || getDefaultEditorial(finalBattle.problem),
-            aiImprovements: aiImprovements,
+            aiImprovements: {},
             playerCodes: {
               player1: finalPlayer1Submission ? { code: finalPlayer1Submission.code, language: finalPlayer1Submission.language } : null,
               player2: finalPlayer2Submission ? { code: finalPlayer2Submission.code, language: finalPlayer2Submission.language } : null
             },
             xpChanges: xpChanges
           });
-          
+
           console.log(`Battle ${battleId} ended - ${finalBattle.winner.username} wins by forfeit (opponent left)`);
           
           // Clean up
@@ -1062,23 +1036,14 @@ export const setupBattleSocket = (io) => {
             await practiceUser.save();
           }
           
-          // Generate AI editorial and improvements concurrently for practice mode
+          // Generate AI editorial for practice mode
           let practiceEditorial = null;
-          let practiceImprovements = [];
           try {
-            const [editResult, improvResult] = await Promise.allSettled([
-              generateEditorial(
-                problem,
-                { code, language },
-                { testCasesPassed, totalTestCases: problem.testCases.length, executionTime }
-              ),
-              generateCodeImprovements(
-                problem, code, language, testCasesPassed, problem.testCases.length
-              )
-            ]);
-
-            practiceEditorial = editResult.status === 'fulfilled' ? editResult.value : null;
-            practiceImprovements = improvResult.status === 'fulfilled' ? improvResult.value : [];
+            practiceEditorial = await generateEditorial(
+              problem,
+              { code, language },
+              { testCasesPassed, totalTestCases: problem.testCases.length, executionTime }
+            );
 
             if (practiceEditorial) {
               battle.problem.editorial = practiceEditorial;
@@ -1086,12 +1051,11 @@ export const setupBattleSocket = (io) => {
           } catch (error) {
             console.error('Error generating practice editorial:', error);
             practiceEditorial = problem.editorial;
-            practiceImprovements = [];
           }
-          
+
           // Store editorial for emission
           battle._practiceEditorial = practiceEditorial || problem.editorial;
-          battle._practiceImprovements = practiceImprovements;
+          battle._practiceImprovements = [];
         }
 
         await battle.save();
@@ -1141,62 +1105,36 @@ export const setupBattleSocket = (io) => {
             ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
             : player1Submission || player2Submission;
 
-          // Run all Gemini calls concurrently to reduce total wait time and API hammering
-          const [editorialResult, p1ImprovementsResult, p2ImprovementsResult] = await Promise.allSettled([
-            // Editorial
-            (winnerSubmission && finalBattle.problem)
-              ? generateEditorial(
-                  finalBattle.problem,
-                  { code: winnerSubmission.code, language: winnerSubmission.language },
-                  {
-                    testCasesPassed: winnerSubmission.testCasesPassed,
-                    totalTestCases: winnerSubmission.totalTestCases,
-                    executionTime: winnerSubmission.executionTime
-                  }
-                )
-              : Promise.resolve(null),
-            // Player 1 improvements
-            player1Submission
-              ? generateCodeImprovements(
-                  finalBattle.problem,
-                  player1Submission.code,
-                  player1Submission.language,
-                  player1Submission.testCasesPassed,
-                  player1Submission.totalTestCases
-                )
-              : Promise.resolve([]),
-            // Player 2 improvements
-            player2Submission
-              ? generateCodeImprovements(
-                  finalBattle.problem,
-                  player2Submission.code,
-                  player2Submission.language,
-                  player2Submission.testCasesPassed,
-                  player2Submission.totalTestCases
-                )
-              : Promise.resolve([])
-          ]);
-
-          const aiEditorial = editorialResult.status === 'fulfilled' ? editorialResult.value : null;
-          const aiImprovements = {
-            player1: p1ImprovementsResult.status === 'fulfilled' ? p1ImprovementsResult.value : [],
-            player2: p2ImprovementsResult.status === 'fulfilled' ? p2ImprovementsResult.value : []
-          };
-
-          if (aiEditorial) {
-            finalBattle.problem.editorial = aiEditorial;
-            await finalBattle.save();
+          // Generate only editorial (1 Gemini call instead of 3)
+          let aiEditorial = null;
+          try {
+            if (winnerSubmission && finalBattle.problem) {
+              aiEditorial = await generateEditorial(
+                finalBattle.problem,
+                { code: winnerSubmission.code, language: winnerSubmission.language },
+                {
+                  testCasesPassed: winnerSubmission.testCasesPassed,
+                  totalTestCases: winnerSubmission.totalTestCases,
+                  executionTime: winnerSubmission.executionTime
+                }
+              );
+              finalBattle.problem.editorial = aiEditorial;
+              await finalBattle.save();
+            }
+          } catch (error) {
+            console.error('Error generating AI editorial:', error);
+            aiEditorial = finalBattle.problem.editorial;
           }
 
           // Get XP changes from battle state
           const stateData = activeBattles.get(battleId);
           const xpData = stateData?.xpChanges || {};
-          
+
           io.to(battleId).emit('battle-complete', {
             winner: finalBattle.winner,
             battle: finalBattle,
             editorial: aiEditorial || finalBattle.problem.editorial || getDefaultEditorial(finalBattle.problem),
-            aiImprovements: aiImprovements,
+            aiImprovements: {},
             playerCodes: {
               player1: player1Submission ? { code: player1Submission.code, language: player1Submission.language } : null,
               player2: player2Submission ? { code: player2Submission.code, language: player2Submission.language } : null
@@ -1410,38 +1348,12 @@ export const setupBattleSocket = (io) => {
             aiEditorial = finalBattle.problem.editorial;
           }
 
-          // Generate AI improvements for both players
-          let aiImprovements = {};
-          try {
-            if (finalPlayer1Submission) {
-              aiImprovements.player1 = await generateCodeImprovements(
-                finalBattle.problem,
-                finalPlayer1Submission.code,
-                finalPlayer1Submission.language,
-                finalPlayer1Submission.testCasesPassed,
-                finalPlayer1Submission.totalTestCases
-              );
-            }
-            if (finalPlayer2Submission) {
-              aiImprovements.player2 = await generateCodeImprovements(
-                finalBattle.problem,
-                finalPlayer2Submission.code,
-                finalPlayer2Submission.language,
-                finalPlayer2Submission.testCasesPassed,
-                finalPlayer2Submission.totalTestCases
-              );
-            }
-          } catch (error) {
-            console.error('Error generating AI improvements for timeout:', error);
-            aiImprovements = {};
-          }
-
           io.to(battleId).emit('battle-complete', {
             winner: finalBattle.winner,
             battle: finalBattle,
             editorial: aiEditorial || finalBattle.problem.editorial || getDefaultEditorial(finalBattle.problem),
             timeExpired: true,
-            aiImprovements: aiImprovements,
+            aiImprovements: {},
             playerCodes: {
               player1: finalPlayer1Submission ? { code: finalPlayer1Submission.code, language: finalPlayer1Submission.language } : null,
               player2: finalPlayer2Submission ? { code: finalPlayer2Submission.code, language: finalPlayer2Submission.language } : null
@@ -1628,38 +1540,12 @@ export const setupBattleSocket = (io) => {
             aiEditorial = finalBattle.problem.editorial;
           }
 
-          // Generate AI improvements for both players
-          let aiImprovements = {};
-          try {
-            if (finalPlayer1Submission) {
-              aiImprovements.player1 = await generateCodeImprovements(
-                finalBattle.problem,
-                finalPlayer1Submission.code,
-                finalPlayer1Submission.language,
-                finalPlayer1Submission.testCasesPassed,
-                finalPlayer1Submission.totalTestCases
-              );
-            }
-            if (finalPlayer2Submission) {
-              aiImprovements.player2 = await generateCodeImprovements(
-                finalBattle.problem,
-                finalPlayer2Submission.code,
-                finalPlayer2Submission.language,
-                finalPlayer2Submission.testCasesPassed,
-                finalPlayer2Submission.totalTestCases
-              );
-            }
-          } catch (error) {
-            console.error('Error generating AI improvements for last chance timeout:', error);
-            aiImprovements = {};
-          }
-
           io.to(battleId).emit('battle-complete', {
             winner: finalBattle.winner,
             battle: finalBattle,
             editorial: aiEditorial || finalBattle.problem.editorial || getDefaultEditorial(finalBattle.problem),
             lastChanceExpired: true,
-            aiImprovements: aiImprovements,
+            aiImprovements: {},
             playerCodes: {
               player1: finalPlayer1Submission ? { code: finalPlayer1Submission.code, language: finalPlayer1Submission.language } : null,
               player2: finalPlayer2Submission ? { code: finalPlayer2Submission.code, language: finalPlayer2Submission.language } : null
@@ -1853,39 +1739,13 @@ export const setupBattleSocket = (io) => {
                     console.error('Error generating AI editorial when opponent left:', error);
                     aiEditorial = finalBattle.problem.editorial;
                   }
-                  
-                  // Generate AI improvements for both players
-                  let aiImprovements = {};
-                  try {
-                    if (finalPlayer1Submission) {
-                      aiImprovements.player1 = await generateCodeImprovements(
-                        finalBattle.problem,
-                        finalPlayer1Submission.code,
-                        finalPlayer1Submission.language,
-                        finalPlayer1Submission.testCasesPassed,
-                        finalPlayer1Submission.totalTestCases
-                      );
-                    }
-                    if (finalPlayer2Submission) {
-                      aiImprovements.player2 = await generateCodeImprovements(
-                        finalBattle.problem,
-                        finalPlayer2Submission.code,
-                        finalPlayer2Submission.language,
-                        finalPlayer2Submission.testCasesPassed,
-                        finalPlayer2Submission.totalTestCases
-                      );
-                    }
-                  } catch (error) {
-                    console.error('Error generating AI improvements when opponent left:', error);
-                    aiImprovements = {};
-                  }
-                  
+
                   io.to(battleId).emit('battle-complete', {
                     winner: finalBattle.winner,
                     battle: finalBattle,
                     opponentLeft: true,
                     editorial: aiEditorial || finalBattle.problem.editorial || getDefaultEditorial(finalBattle.problem),
-                    aiImprovements: aiImprovements,
+                    aiImprovements: {},
                     playerCodes: {
                       player1: finalPlayer1Submission ? { code: finalPlayer1Submission.code, language: finalPlayer1Submission.language } : null,
                       player2: finalPlayer2Submission ? { code: finalPlayer2Submission.code, language: finalPlayer2Submission.language } : null
