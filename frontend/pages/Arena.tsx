@@ -512,10 +512,18 @@ const Arena = () => {
         }
       }
       
-      // Store editorial data for later display
-      // Ensure editorial is an object (not a string from old data)
-      if (editorial) {
-        const editorialObj = typeof editorial === 'string' 
+      // Store editorial data for later display (always provide fallback content)
+      const editorialObj = !editorial
+        ? {
+            summary: 'Match completed. Editorial is being prepared.',
+            approach: '',
+            optimalSolution: '',
+            timeComplexity: 'N/A',
+            spaceComplexity: 'N/A',
+            keyTakeaways: [],
+            commonMistakes: []
+          }
+        : typeof editorial === 'string'
           ? {
               summary: editorial,
               approach: '',
@@ -526,17 +534,17 @@ const Arena = () => {
               commonMistakes: []
             }
           : editorial;
-        
-        setEditorialData({
-          editorial: editorialObj,
-          aiImprovements,
-          playerCodes,
-          winner: winner?.username
-        });
-      }
+
+      setEditorialData({
+        editorial: editorialObj,
+        aiImprovements: aiImprovements || {},
+        playerCodes: playerCodes || {},
+        winner: winner?.username
+      });
       
       // Determine if current user won
-      const isCurrentUserWinner = winner && user && (winner._id === user._id || winner.toString() === user._id);
+      const winnerId = winner?._id || (typeof winner === 'string' ? winner : winner?.toString?.());
+      const isCurrentUserWinner = !!(winnerId && user && winnerId === user._id);
       
       setIsWinner(!!isCurrentUserWinner);
       setShowResultModal(true);

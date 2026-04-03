@@ -32,6 +32,20 @@ function getDefaultEditorial(problem) {
   };
 }
 
+function resolveEntityId(entity) {
+  if (!entity) return null;
+  if (typeof entity === 'string') return entity;
+  if (entity._id) return entity._id.toString();
+  if (typeof entity.toString === 'function') return entity.toString();
+  return null;
+}
+
+function getSubmissionForPlayer(finalBattle, playerIndex) {
+  const playerId = resolveEntityId(finalBattle?.players?.[playerIndex]);
+  if (!playerId) return null;
+  return finalBattle?.submissions?.find(s => s.userId?.toString() === playerId) || null;
+}
+
 /**
  * Helper function to get or generate a problem for battle
  * Uses AI to generate problems based on user profiles
@@ -635,24 +649,15 @@ export const setupBattleSocket = (io) => {
             .populate('winner', 'username level xp');
           
           // Get submissions for editorial
-          let finalPlayer1Submission = null;
-          let finalPlayer2Submission = null;
-          if (Array.isArray(finalBattle.players) && finalBattle.players.length > 0 && finalBattle.players[0] && finalBattle.players[0]._id) {
-            finalPlayer1Submission = finalBattle.submissions.find(
-              s => s.userId?.toString() === finalBattle.players[0]._id.toString()
-            );
-          }
-          if (Array.isArray(finalBattle.players) && finalBattle.players.length > 1 && finalBattle.players[1] && finalBattle.players[1]._id) {
-            finalPlayer2Submission = finalBattle.submissions.find(
-              s => s.userId?.toString() === finalBattle.players[1]._id.toString()
-            );
-          }
+          const finalPlayer1Submission = getSubmissionForPlayer(finalBattle, 0);
+          const finalPlayer2Submission = getSubmissionForPlayer(finalBattle, 1);
           
           // Generate AI editorial even when opponent leaves
           let aiEditorial = null;
           try {
-            const winnerSubmission = finalBattle.winner
-              ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
+            const winnerId = resolveEntityId(finalBattle.winner);
+            const winnerSubmission = winnerId
+              ? finalBattle.submissions.find(s => s.userId?.toString() === winnerId)
               : finalPlayer1Submission || finalPlayer2Submission;
 
             if (winnerSubmission && finalBattle.problem) {
@@ -690,7 +695,8 @@ export const setupBattleSocket = (io) => {
             xpChanges: xpChanges
           });
 
-          console.log(`Battle ${battleId} ended - ${finalBattle.winner.username} wins by forfeit (opponent left)`);
+          const winnerName = finalBattle?.winner?.username || 'Unknown player';
+          console.log(`Battle ${battleId} ended - ${winnerName} wins by forfeit (opponent left)`);
           
           // Clean up
           activeBattles.delete(battleId);
@@ -1014,7 +1020,7 @@ export const setupBattleSocket = (io) => {
           }
         }
 
-        // Handle practice mode completion with AI editorial
+        // Handle practice mode completion
         const isPracticeMode = battle.mode === 'practice' || battle.players.length === 1;
         if (isPracticeMode && allPassed) {
           battle.solved = true;
@@ -1036,25 +1042,9 @@ export const setupBattleSocket = (io) => {
             await practiceUser.save();
           }
           
-          // Generate AI editorial for practice mode
-          let practiceEditorial = null;
-          try {
-            practiceEditorial = await generateEditorial(
-              problem,
-              { code, language },
-              { testCasesPassed, totalTestCases: problem.testCases.length, executionTime }
-            );
-
-            if (practiceEditorial) {
-              battle.problem.editorial = practiceEditorial;
-            }
-          } catch (error) {
-            console.error('Error generating practice editorial:', error);
-            practiceEditorial = problem.editorial;
-          }
-
-          // Store editorial for emission
-          battle._practiceEditorial = practiceEditorial || problem.editorial;
+          // Avoid blocking submit response with a second Gemini call here.
+          // Final editorial is generated in the shared battle-complete path.
+          battle._practiceEditorial = problem.editorial;
           battle._practiceImprovements = [];
         }
 
@@ -1093,16 +1083,13 @@ export const setupBattleSocket = (io) => {
             .populate('winner', 'username level xp');
 
           // Get both submissions for comparison
-          const player1Submission = finalBattle.submissions.find(
-            s => s.userId.toString() === finalBattle.players[0]._id.toString()
-          );
-          const player2Submission = finalBattle.submissions.find(
-            s => s.userId.toString() === finalBattle.players[1]._id.toString()
-          );
+          const player1Submission = getSubmissionForPlayer(finalBattle, 0);
+          const player2Submission = getSubmissionForPlayer(finalBattle, 1);
 
           // Use the winner's solution for editorial generation
-          const winnerSubmission = finalBattle.winner
-            ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
+          const winnerId = resolveEntityId(finalBattle.winner);
+          const winnerSubmission = winnerId
+            ? finalBattle.submissions.find(s => s.userId?.toString() === winnerId)
             : player1Submission || player2Submission;
 
           // Generate only editorial (1 Gemini call instead of 3)
@@ -1312,18 +1299,15 @@ export const setupBattleSocket = (io) => {
             .populate('winner', 'username level xp');
 
           // Get both submissions for comparison
-          const finalPlayer1Submission = finalBattle.submissions.find(
-            s => s.userId.toString() === finalBattle.players[0]._id.toString()
-          );
-          const finalPlayer2Submission = finalBattle.submissions.find(
-            s => s.userId.toString() === finalBattle.players[1]._id.toString()
-          );
+          const finalPlayer1Submission = getSubmissionForPlayer(finalBattle, 0);
+          const finalPlayer2Submission = getSubmissionForPlayer(finalBattle, 1);
 
           // Generate AI editorial for last chance completion
           let aiEditorial = null;
           try {
-            const winnerSubmission = finalBattle.winner 
-              ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
+            const winnerId = resolveEntityId(finalBattle.winner);
+            const winnerSubmission = winnerId
+              ? finalBattle.submissions.find(s => s.userId?.toString() === winnerId)
               : finalPlayer1Submission || finalPlayer2Submission;
               
             if (winnerSubmission && finalBattle.problem) {
@@ -1504,18 +1488,15 @@ export const setupBattleSocket = (io) => {
             .populate('players', 'username level xp')
             .populate('winner', 'username level xp');
 
-          const finalPlayer1Submission = finalBattle.submissions.find(
-            s => s.userId.toString() === finalBattle.players[0]._id.toString()
-          );
-          const finalPlayer2Submission = finalBattle.submissions.find(
-            s => s.userId.toString() === finalBattle.players[1]._id.toString()
-          );
+          const finalPlayer1Submission = getSubmissionForPlayer(finalBattle, 0);
+          const finalPlayer2Submission = getSubmissionForPlayer(finalBattle, 1);
 
           // Generate AI editorial for last chance timeout
           let aiEditorial = null;
           try {
-            const winnerSubmission = finalBattle.winner 
-              ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
+            const winnerId = resolveEntityId(finalBattle.winner);
+            const winnerSubmission = winnerId
+              ? finalBattle.submissions.find(s => s.userId?.toString() === winnerId)
               : finalPlayer1Submission || finalPlayer2Submission;
               
             if (winnerSubmission && finalBattle.problem) {
@@ -1704,18 +1685,15 @@ export const setupBattleSocket = (io) => {
                     .populate('winner', 'username level xp');
                   
                   // Get submissions for editorial
-                  const finalPlayer1Submission = finalBattle.submissions.find(
-                    s => s.userId.toString() === finalBattle.players[0]._id.toString()
-                  );
-                  const finalPlayer2Submission = finalBattle.submissions.find(
-                    s => s.userId.toString() === finalBattle.players[1]._id.toString()
-                  );
+                  const finalPlayer1Submission = getSubmissionForPlayer(finalBattle, 0);
+                  const finalPlayer2Submission = getSubmissionForPlayer(finalBattle, 1);
                   
                   // Generate AI editorial even when opponent leaves
                   let aiEditorial = null;
                   try {
-                    const winnerSubmission = finalBattle.winner 
-                      ? finalBattle.submissions.find(s => s.userId.toString() === finalBattle.winner._id.toString())
+                    const winnerId = resolveEntityId(finalBattle.winner);
+                    const winnerSubmission = winnerId
+                      ? finalBattle.submissions.find(s => s.userId?.toString() === winnerId)
                       : finalPlayer1Submission || finalPlayer2Submission;
                       
                     if (winnerSubmission && finalBattle.problem) {
@@ -1753,7 +1731,8 @@ export const setupBattleSocket = (io) => {
                     xpChanges: xpChanges
                   });
                   
-                  console.log(`Battle ${battleId} ended - opponent left, ${finalBattle.winner.username} wins`);
+                  const winnerName = finalBattle?.winner?.username || 'Unknown player';
+                  console.log(`Battle ${battleId} ended - opponent left, ${winnerName} wins`);
                   
                   // Clean up
                   activeBattles.delete(battleId);

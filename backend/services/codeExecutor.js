@@ -219,6 +219,11 @@ const LANGUAGE_MAP = {
 const COMPILER_URL =
   process.env.COMPILER_SERVICE_URL ||
   "https://codeclash-czhz.onrender.com";
+const EXECUTION_TIMEOUT_MS = Number(process.env.EXECUTION_TIMEOUT_MS || 30000);
+const EXECUTION_CONCURRENCY = Math.max(
+  1,
+  Number(process.env.EXECUTION_CONCURRENCY || 1)
+);
 
 /* ===========================
    Utility Functions
@@ -254,6 +259,20 @@ const formatCompilerError = (result) => {
     return "Time Limit Exceeded";
 
   return `Runtime Error: ${result.output || "Execution failed"}`;
+};
+
+const isLikelyCompileErrorText = (text = "") => {
+  const lower = text.toLowerCase();
+  return (
+    lower.includes("compilation error") ||
+    lower.includes("assembler messages") ||
+    lower.includes("undefined reference to `main'") ||
+    lower.includes("undefined reference to 'main'") ||
+    lower.includes("ld returned 1 exit status") ||
+    lower.includes("collect2: error") ||
+    lower.includes("error: can't open") ||
+    lower.includes("error: cannot open")
+  );
 };
 
 /* ===========================
@@ -313,97 +332,191 @@ const analyzeOutput = (actual, expected) => {
    Core Execution Function
 =========================== */
 
+const runWithConcurrency = async (items, limit, task) => {
+  const output = new Array(items.length);
+  let cursor = 0;
+
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const current = cursor;
+      cursor += 1;
+      if (current >= items.length) break;
+      output[current] = await task(items[current], current);
+    }
+  });
+
+  await Promise.all(workers);
+  return output;
+};
+
+const makeResult = (testCase, index, payload) => ({
+  testCaseNumber: index + 1,
+  inputPreview:
+    testCase.input?.length > 200
+      ? testCase.input.substring(0, 200) + "... (truncated)"
+      : testCase.input || "(empty input)",
+  isHidden: testCase.isHidden || false,
+  ...payload,
+});
+
+const executeSingleTestCase = async (code, mappedLanguage, testCase, index) => {
+  try {
+    const response = await axios.post(
+      `${COMPILER_URL}/api/execute`,
+      {
+        language: mappedLanguage,
+        script: code,
+        stdin: testCase.input || "",
+        hasInputFiles: false,
+      },
+      {
+        timeout: EXECUTION_TIMEOUT_MS,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const result = response.data;
+    const actualOutput = normalizeOutput(result.output);
+    const expectedOutput = normalizeOutput(testCase.output);
+
+    let error = null;
+    let status = "Accepted";
+    let diff = null;
+    let compileError = false;
+
+    if (result.error) {
+      error = formatCompilerError(result);
+      status = error;
+      compileError = Boolean(result.compile_message) || isLikelyCompileErrorText(error);
+    } else {
+      const comparison = analyzeOutput(actualOutput, expectedOutput);
+      if (comparison.type !== "match") {
+        error = `Wrong Answer: ${comparison.message}`;
+        status = `Wrong Answer (${comparison.type})`;
+        diff = comparison.message;
+      }
+    }
+
+    return makeResult(testCase, index, {
+      passed: !error,
+      output: actualOutput,
+      expected: expectedOutput,
+      time: result.execute_time || 0,
+      memory: result.memory || 0,
+      error,
+      statusDescription: status,
+      diffAnalysis: diff,
+      compileError,
+    });
+  } catch (err) {
+    console.error("Compiler service error:", err);
+
+    const message =
+      err.code === "ECONNREFUSED"
+        ? `Compiler service unavailable at ${COMPILER_URL}`
+        : err.response?.data?.message || err.response?.statusText || err.message;
+    const compileError = isLikelyCompileErrorText(message);
+
+    return makeResult(testCase, index, {
+      passed: false,
+      output: "",
+      expected: testCase.output,
+      time: 0,
+      memory: 0,
+      error: message,
+      statusDescription: "Execution Error",
+      diffAnalysis: message,
+      compileError,
+    });
+  }
+};
+
 export const executeCode = async (code, language, testCases) => {
   const mappedLanguage = LANGUAGE_MAP[language.toLowerCase()];
   if (!mappedLanguage)
     throw new Error(`Unsupported language: ${language}`);
 
-  const results = [];
+  if (!Array.isArray(testCases) || testCases.length === 0) {
+    return [];
+  }
 
-  for (let i = 0; i < testCases.length; i++) {
-    const testCase = testCases[i];
+  const results = new Array(testCases.length);
+  let firstCompileError = null;
 
-    try {
-      const response = await axios.post(
-        `${COMPILER_URL}/api/execute`,
-        {
-          language: mappedLanguage,
-          script: code,
-          stdin: testCase.input || "",
-          hasInputFiles: false,
-        },
-        {
-          timeout: 60000,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+  if (EXECUTION_CONCURRENCY === 1) {
+    for (let i = 0; i < testCases.length; i++) {
+      const result = await executeSingleTestCase(code, mappedLanguage, testCases[i], i);
+      results[i] = result;
 
-      const result = response.data;
+      if (result.compileError) {
+        firstCompileError = result;
+        break;
+      }
+    }
 
-      const actualOutput = normalizeOutput(result.output);
-      const expectedOutput = normalizeOutput(testCase.output);
-
-      let error = null;
-      let status = "Accepted";
-      let diff = null;
-
-      if (result.error) {
-        error = formatCompilerError(result);
-        status = error;
-      } else {
-        const comparison = analyzeOutput(actualOutput, expectedOutput);
-
-        if (comparison.type !== "match") {
-          error = `Wrong Answer: ${comparison.message}`;
-          status = `Wrong Answer (${comparison.type})`;
-          diff = comparison.message;
+    if (firstCompileError) {
+      for (let i = 0; i < testCases.length; i++) {
+        if (!results[i]) {
+          results[i] = makeResult(testCases[i], i, {
+            passed: false,
+            output: "",
+            expected: normalizeOutput(testCases[i].output),
+            time: 0,
+            memory: 0,
+            error: firstCompileError.error,
+            statusDescription: firstCompileError.statusDescription,
+            diffAnalysis: firstCompileError.diffAnalysis,
+            compileError: true,
+          });
         }
       }
+    }
 
-      results.push({
-        passed: !error,
-        output: actualOutput,
-        expected: expectedOutput,
-        time: result.execute_time || 0,
-        memory: result.memory || 0,
-        error,
-        statusDescription: status,
-        diffAnalysis: diff,
-        testCaseNumber: i + 1,
-        inputPreview:
-          testCase.input?.length > 200
-            ? testCase.input.substring(0, 200) + "... (truncated)"
-            : testCase.input || "(empty input)",
-        isHidden: testCase.isHidden || false,
-      });
-    } catch (err) {
-      console.error("Compiler service error:", err);
+    return results.map(({ compileError, ...result }) => result);
+  }
 
-      const message =
-        err.code === "ECONNREFUSED"
-          ? `Compiler service unavailable at ${COMPILER_URL}`
-          : err.response?.data?.message ||
-            err.response?.statusText ||
-            err.message;
+  // Optional parallel mode (explicitly enabled by env)
+  results[0] = await executeSingleTestCase(code, mappedLanguage, testCases[0], 0);
+  if (results[0].compileError) {
+    firstCompileError = results[0];
+  } else {
+    const remaining = testCases
+      .slice(1)
+      .map((testCase, offset) => ({ testCase, index: offset + 1 }));
 
-      results.push({
-        passed: false,
-        output: "",
-        expected: testCase.output,
-        time: 0,
-        memory: 0,
-        error: message,
-        statusDescription: "Execution Error",
-        diffAnalysis: message,
-        testCaseNumber: i + 1,
-        inputPreview:
-          testCase.input?.length > 200
-            ? testCase.input.substring(0, 200) + "... (truncated)"
-            : testCase.input || "(empty input)",
-        isHidden: testCase.isHidden || false,
-      });
+    const remainingResults = await runWithConcurrency(
+      remaining,
+      EXECUTION_CONCURRENCY,
+      async ({ testCase, index }) =>
+        executeSingleTestCase(code, mappedLanguage, testCase, index)
+    );
+
+    remainingResults.forEach((result, idx) => {
+      results[idx + 1] = result;
+      if (!firstCompileError && result.compileError) {
+        firstCompileError = result;
+      }
+    });
+  }
+
+  // If any compile/linker error happens, normalize all failed test cases to it.
+  if (firstCompileError) {
+    for (let i = 0; i < testCases.length; i++) {
+      if (!results[i] || results[i].compileError || !results[i].passed) {
+        results[i] = makeResult(testCases[i], i, {
+          passed: false,
+          output: "",
+          expected: normalizeOutput(testCases[i].output),
+          time: 0,
+          memory: 0,
+          error: firstCompileError.error,
+          statusDescription: firstCompileError.statusDescription,
+          diffAnalysis: firstCompileError.diffAnalysis,
+          compileError: true,
+        });
+      }
     }
   }
 
-  return results;
+  return results.map(({ compileError, ...result }) => result);
 };
