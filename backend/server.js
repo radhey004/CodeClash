@@ -50,7 +50,21 @@ const PORT = process.env.PORT || 5000;
 
 connectDB();
 
-app.use(cors());
+// Enhanced CORS configuration to handle file uploads and preflight requests
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://gocodeclash.vercel.app',
+    process.env.FRONTEND_URL
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 200
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

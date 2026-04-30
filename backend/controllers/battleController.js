@@ -24,7 +24,7 @@ export const createBattle = async (req, res) => {
     });
 
     const populatedBattle = await Battle.findById(battle._id)
-      .populate('players', 'username level');
+      .populate('players', 'username level avatar');
 
     res.status(201).json(populatedBattle);
   } catch (error) {
@@ -119,7 +119,7 @@ export const submitCode = async (req, res) => {
 export const getBattle = async (req, res) => {
   try {
     const battle = await Battle.findById(req.params.id)
-      .populate('players', 'username level xp')
+      .populate('players', 'username level xp avatar')
       .populate('winner', 'username');
 
     if (!battle) {
@@ -138,7 +138,7 @@ export const getUserBattles = async (req, res) => {
     const battles = await Battle.find({
       players: req.user._id
     })
-      .populate('players', 'username level xp wins losses totalBattles')
+      .populate('players', 'username level xp wins losses totalBattles avatar')
       .populate('winner', 'username')
       .sort({ createdAt: -1 })
       .limit(20);

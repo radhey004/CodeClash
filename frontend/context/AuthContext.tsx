@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider, githubProvider } from '../config/firebase';
 import { authAPI } from '../services/api';
 
 interface User {
@@ -20,6 +22,7 @@ interface User {
   longestStreak?: number;
   currentWinStreak?: number;
   longestWinStreak?: number;
+  avatar?: string;
 }
 
 interface AuthContextType {
@@ -27,6 +30,8 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
+  googleLogin: () => Promise<{ isNewUser: boolean }>;
+  githubLogin: () => Promise<{ isNewUser: boolean }>;
   logout: () => void;
   updateUser: (userData: User) => void;
 }
@@ -63,6 +68,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data);
   };
 
+  const handleSocialLogin = async (provider: typeof googleProvider | typeof githubProvider): Promise<{ isNewUser: boolean }> => {
+    const result = await signInWithPopup(auth, provider);
+    const idToken = await result.user.getIdToken();
+    const data = await authAPI.firebaseLogin(idToken);
+    localStorage.setItem('token', data.token);
+    setUser(data);
+    return { isNewUser: data.isNewUser };
+  };
+
+  const googleLogin = () => handleSocialLogin(googleProvider);
+  const githubLogin = () => handleSocialLogin(githubProvider);
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -73,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, githubLogin, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

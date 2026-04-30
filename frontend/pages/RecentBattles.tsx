@@ -12,6 +12,7 @@ interface Player {
   wins?: number;
   losses?: number;
   totalBattles?: number;
+  avatar?: string;
 }
 
 interface Battle {
@@ -266,9 +267,17 @@ const RecentBattles = () => {
                               <Users className="w-4 h-4 text-gray-400" />
                               <span className="text-gray-400 text-sm">Opponent:</span>
                               <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-                                  <span className="text-sm font-bold text-white">{opponent.level || 1}</span>
-                                </div>
+                                {opponent.avatar ? (
+                                  <img
+                                    src={opponent.avatar}
+                                    alt={opponent.username}
+                                    className="w-8 h-8 rounded-full object-cover border border-cyan-500"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
+                                    <span className="text-sm font-bold text-white">{opponent.level || 1}</span>
+                                  </div>
+                                )}
                                 <div>
                                   <p className="text-white font-semibold">{opponent.username}</p>
                                   {opponent.totalBattles !== undefined && (

@@ -18,6 +18,7 @@ interface User {
   friendshipStatus?: string;
   friendshipId?: string;
   friendsSince?: string;
+  avatar?: string;
 }
 
 interface FriendRequest {
@@ -363,11 +364,21 @@ export default function Friends() {
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => navigate(`/profile/${friend._id}`)}
-                      className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-700 transition-colors cursor-pointer"
+                      className="w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer overflow-hidden"
                     >
-                      <span className="text-white font-bold text-xl">
-                        {friend.username[0].toUpperCase()}
-                      </span>
+                      {friend.avatar ? (
+                        <img
+                          src={friend.avatar}
+                          alt={friend.username}
+                          className="w-full h-full object-cover border-2 border-purple-600"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-purple-600 flex items-center justify-center">
+                          <span className="text-white font-bold text-xl">
+                            {friend.username[0].toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </button>
                     <div>
                       <div className="flex items-center gap-2">
@@ -441,11 +452,21 @@ export default function Friends() {
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => navigate(`/profile/${request.user._id}`)}
-                          className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-700 transition-colors cursor-pointer"
+                          className="w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer overflow-hidden"
                         >
-                          <span className="text-white font-bold text-xl">
-                            {request.user.username[0].toUpperCase()}
-                          </span>
+                          {request.user.avatar ? (
+                            <img
+                              src={request.user.avatar}
+                              alt={request.user.username}
+                              className="w-full h-full object-cover border-2 border-purple-600"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-purple-600 flex items-center justify-center">
+                              <span className="text-white font-bold text-xl">
+                                {request.user.username[0].toUpperCase()}
+                              </span>
+                            </div>
+                          )}
                         </button>
                         <div>
                           <button
@@ -498,11 +519,21 @@ export default function Friends() {
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => navigate(`/profile/${request.user._id}`)}
-                          className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-700 transition-colors cursor-pointer"
+                          className="w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer overflow-hidden"
                         >
-                          <span className="text-white font-bold text-xl">
-                            {request.user.username[0].toUpperCase()}
-                          </span>
+                          {request.user.avatar ? (
+                            <img
+                              src={request.user.avatar}
+                              alt={request.user.username}
+                              className="w-full h-full object-cover border-2 border-purple-600"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-purple-600 flex items-center justify-center">
+                              <span className="text-white font-bold text-xl">
+                                {request.user.username[0].toUpperCase()}
+                              </span>
+                            </div>
+                          )}
                         </button>
                         <div>
                           <button
@@ -579,11 +610,21 @@ export default function Friends() {
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => navigate(`/profile/${searchUser._id}`)}
-                      className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-700 transition-colors cursor-pointer"
+                      className="w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer overflow-hidden"
                     >
-                      <span className="text-white font-bold text-xl">
-                        {searchUser.username[0].toUpperCase()}
-                      </span>
+                      {searchUser.avatar ? (
+                        <img
+                          src={searchUser.avatar}
+                          alt={searchUser.username}
+                          className="w-full h-full object-cover border-2 border-purple-600"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-purple-600 flex items-center justify-center">
+                          <span className="text-white font-bold text-xl">
+                            {searchUser.username[0].toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </button>
                     <div>
                       <button

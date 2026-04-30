@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import User from '../models/User.js';
+import admin from '../config/firebase.js';
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -43,6 +44,7 @@ export const register = async (req, res) => {
       xp: user.xp,
       rankedXP: user.rankedXP,
       rank: user.rank,
+      avatar: user.avatar,
       token
     });
   } catch (error) {
@@ -89,6 +91,7 @@ export const login = async (req, res) => {
       xp: user.xp,
       rankedXP: user.rankedXP,
       rank: user.rank,
+      avatar: user.avatar,
       wins: user.wins,
       losses: user.losses,
       totalBattles: user.totalBattles,
@@ -238,5 +241,132 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ message: 'Error resetting password. Please try again.' });
+  }
+};
+
+export const firebaseLogin = async (req, res) => {
+  try {
+    if (!admin.auth) {
+      console.error('Firebase Admin SDK not initialized');
+      return res.status(500).json({ message: 'Firebase is not configured. Please contact support.' });
+    }
+
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ message: 'ID token is required' });
+    }
+
+    // Verify Firebase ID token
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (tokenError) {
+      console.error('Token verification error:', tokenError);
+      if (tokenError.code === 'auth/id-token-expired') {
+        return res.status(401).json({ message: 'Token expired. Please try again.' });
+      }
+      if (tokenError.code === 'auth/argument-error') {
+        return res.status(400).json({ message: 'Invalid token.' });
+      }
+      throw tokenError;
+    }
+
+    const { uid, email, name, picture } = decodedToken;
+
+    // Determine provider (google.com, github.com, etc.)
+    const provider = decodedToken.firebase?.sign_in_provider || '';
+    const isGoogle = provider === 'google.com';
+    const isGithub = provider === 'github.com';
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required. Please ensure your social account has a public email.' });
+    }
+
+    // Try to find existing user by social ID or email
+    let user = null;
+    let isNewUser = false;
+
+    if (isGoogle) {
+      user = await User.findOne({ googleId: uid });
+    } else if (isGithub) {
+      user = await User.findOne({ githubId: uid });
+    }
+
+    // If not found by social ID, try by email (auto-link)
+    if (!user) {
+      user = await User.findOne({ email: email.toLowerCase() });
+
+      if (user) {
+        // Link social account to existing user
+        if (isGoogle) user.googleId = uid;
+        if (isGithub) user.githubId = uid;
+        if (picture && !user.avatar) user.avatar = picture;
+        await user.save();
+      }
+    }
+
+    // If still no user, create a new one
+    if (!user) {
+      isNewUser = true;
+
+      // Auto-generate username from display name
+      const baseName = (name || email.split('@')[0])
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '')
+        .substring(0, 16);
+      const suffix = Math.random().toString(36).substring(2, 6);
+      let username = `${baseName}_${suffix}`;
+
+      // Ensure username is unique
+      while (await User.findOne({ username })) {
+        const newSuffix = Math.random().toString(36).substring(2, 6);
+        username = `${baseName}_${newSuffix}`;
+      }
+
+      user = await User.create({
+        username,
+        email: email.toLowerCase(),
+        googleId: isGoogle ? uid : undefined,
+        githubId: isGithub ? uid : undefined,
+        avatar: picture || ''
+      });
+
+      user.updateRank();
+      await user.save();
+    }
+
+    const token = generateToken(user._id);
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      level: user.level,
+      xp: user.xp,
+      rankedXP: user.rankedXP,
+      rank: user.rank,
+      avatar: user.avatar,
+      wins: user.wins,
+      losses: user.losses,
+      totalBattles: user.totalBattles,
+      currentStreak: user.currentStreak,
+      longestStreak: user.longestStreak,
+      currentWinStreak: user.currentWinStreak,
+      longestWinStreak: user.longestWinStreak,
+      token,
+      isNewUser
+    });
+  } catch (error) {
+    console.error('Firebase login error:', error);
+    if (error.code === 'auth/id-token-expired') {
+      return res.status(401).json({ message: 'Token expired. Please try again.' });
+    }
+    if (error.code === 'auth/argument-error') {
+      return res.status(400).json({ message: 'Invalid token.' });
+    }
+    res.status(500).json({ message: error.message || 'Social login failed. Please try again.' });
   }
 };

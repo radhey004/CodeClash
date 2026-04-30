@@ -246,7 +246,7 @@ export const searchUsers = async (req, res) => {
       username: { $regex: query, $options: 'i' },
       _id: { $ne: userId } // Exclude current user
     })
-    .select('username level xp wins losses')
+    .select('username level xp wins losses avatar')
     .limit(20);
 
     // Get friendship status for each user

@@ -41,7 +41,7 @@ friendSchema.statics.getFriends = async function(userId) {
       { requester: userId, status: 'accepted' },
       { recipient: userId, status: 'accepted' }
     ]
-  }).populate('requester recipient', 'username level xp wins losses');
+  }).populate('requester recipient', 'username level xp wins losses avatar');
 
   return friendships.map(friendship => {
     const friend = friendship.requester._id.toString() === userId.toString()
@@ -60,7 +60,7 @@ friendSchema.statics.getPendingRequests = async function(userId) {
   const requests = await this.find({
     recipient: userId,
     status: 'pending'
-  }).populate('requester', 'username level xp wins losses');
+  }).populate('requester', 'username level xp wins losses avatar');
 
   return requests.map(req => ({
     requestId: req._id,
@@ -74,7 +74,7 @@ friendSchema.statics.getSentRequests = async function(userId) {
   const requests = await this.find({
     requester: userId,
     status: 'pending'
-  }).populate('recipient', 'username level xp wins losses');
+  }).populate('recipient', 'username level xp wins losses avatar');
 
   return requests.map(req => ({
     requestId: req._id,

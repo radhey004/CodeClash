@@ -8,12 +8,20 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    },
     proxy: {
       '/api': {
-        target: 'https://codeclash-2-g5un.onrender.com',
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
+    },
+  },
+  preview: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
     },
   },
 });

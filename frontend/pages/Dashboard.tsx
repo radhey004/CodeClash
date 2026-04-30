@@ -12,6 +12,7 @@ interface Player {
   wins?: number;
   losses?: number;
   totalBattles?: number;
+  avatar?: string;
 }
 
 interface Battle {
@@ -127,12 +128,22 @@ const Dashboard = () => {
             <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border border-cyan-500/30 rounded-xl p-6 shadow-xl">
               <div className="text-center mb-6">
                 <div className="relative w-28 h-28 mx-auto mb-4">
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 rounded-full animate-pulse"></div>
-                  <div className="absolute inset-1 bg-gray-900 rounded-full flex items-center justify-center">
-                    <span className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                      {user?.level}
-                    </span>
-                  </div>
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
+                      className="w-full h-full rounded-full object-cover border-4 border-cyan-500 shadow-lg"
+                    />
+                  ) : (
+                    <>
+                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 rounded-full animate-pulse"></div>
+                      <div className="absolute inset-1 bg-gray-900 rounded-full flex items-center justify-center">
+                        <span className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                          {user?.level}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">{user?.username}</h2>
                 <div className="flex items-center justify-center space-x-2">
@@ -354,9 +365,17 @@ const Dashboard = () => {
                                     vs
                                   </span>
                                   <div className="flex items-center space-x-2 bg-gray-800/50 rounded-lg px-3 py-1 border border-gray-600/30">
-                                    <div className="w-6 h-6 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-                                      <span className="text-xs font-bold text-white">{opponent.level || 1}</span>
-                                    </div>
+                                    {opponent.avatar ? (
+                                      <img
+                                        src={opponent.avatar}
+                                        alt={opponent.username}
+                                        className="w-6 h-6 rounded-full object-cover border border-cyan-500"
+                                      />
+                                    ) : (
+                                      <div className="w-6 h-6 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
+                                        <span className="text-xs font-bold text-white">{opponent.level || 1}</span>
+                                      </div>
+                                    )}
                                     <span className="text-xs font-semibold text-white">{opponent.username}</span>
                                     <button
                                       onClick={(e) => handleViewProfile(opponent._id, e)}

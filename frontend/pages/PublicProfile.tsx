@@ -6,6 +6,7 @@ import { friendAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 interface User {
+  _id?: string;
   username: string;
   level: number;
   xp: number;
@@ -21,6 +22,7 @@ interface User {
   longestStreak: number;
   currentWinStreak: number;
   longestWinStreak: number;
+  avatar?: string;
 }
 
 interface FriendshipStatus {
@@ -245,8 +247,18 @@ const PublicProfile = () => {
         <div className="bg-gray-800 border border-cyan-500/30 rounded-lg p-8 mb-8">
           <div className="flex items-start space-x-8">
             <div className="flex-shrink-0">
-              <div className="w-32 h-32 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-5xl font-bold text-white">{user.level}</span>
+              <div className="relative">
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.username}
+                    className="w-32 h-32 rounded-full object-cover border-4 border-cyan-500 shadow-lg"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center border-4 border-cyan-500 shadow-lg">
+                    <span className="text-5xl font-bold text-white">{user.level}</span>
+                  </div>
+                )}
               </div>
               <div className={`mt-4 text-center bg-gradient-to-r ${rankColor} text-white px-4 py-2 rounded-lg font-bold shadow-lg`}>
                 {displayRank}

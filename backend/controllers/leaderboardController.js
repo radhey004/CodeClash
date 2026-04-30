@@ -52,7 +52,7 @@ export const getLeaderboard = async (req, res) => {
     }
 
     const users = await User.find(dateFilter)
-      .select('username level xp rankedXP rank league trophies legendTrophies wins losses totalBattles seasonParticipated')
+      .select('username level xp rankedXP rank league trophies legendTrophies wins losses totalBattles seasonParticipated avatar')
       .limit(1000); // Get more users for proper sorting
 
     // Calculate win rate and filter users with at least 1 battle
@@ -71,6 +71,7 @@ export const getLeaderboard = async (req, res) => {
         losses: user.losses,
         totalBattles: user.totalBattles,
         seasonParticipated: user.seasonParticipated || false,
+        avatar: user.avatar,
         winRate: Math.min(((user.wins / user.totalBattles) * 100), 100).toFixed(1)
       }))
       .sort((a, b) => {
@@ -125,7 +126,7 @@ export const getMyLeague = async (req, res) => {
       league: currentUser.league,
       seasonParticipated: true
     })
-      .select('username level xp rankedXP rank league trophies legendTrophies wins losses totalBattles')
+      .select('username level xp rankedXP rank league trophies legendTrophies wins losses totalBattles avatar')
       .limit(500);
 
     // Sort and rank
@@ -141,6 +142,7 @@ export const getMyLeague = async (req, res) => {
         wins: user.wins,
         losses: user.losses,
         totalBattles: user.totalBattles,
+        avatar: user.avatar,
         winRate: user.totalBattles > 0 ? Math.min(((user.wins / user.totalBattles) * 100), 100).toFixed(1) : '0.0'
       }))
       .sort((a, b) => {
@@ -170,7 +172,7 @@ export const getMyLeague = async (req, res) => {
 export const getTopPlayers = async (req, res) => {
   try {
     const users = await User.find({})
-      .select('username level xp rankedXP rank league trophies legendTrophies wins losses totalBattles seasonParticipated')
+      .select('username level xp rankedXP rank league trophies legendTrophies wins losses totalBattles seasonParticipated avatar')
       .limit(1000);
 
     // Get top players across all leagues
@@ -188,6 +190,7 @@ export const getTopPlayers = async (req, res) => {
         losses: user.losses,
         totalBattles: user.totalBattles,
         seasonParticipated: user.seasonParticipated || false,
+        avatar: user.avatar,
         winRate: Math.min(((user.wins / user.totalBattles) * 100), 100).toFixed(1)
       }))
       .sort((a, b) => {

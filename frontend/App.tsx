@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import ChooseUsername from './pages/ChooseUsername';
 import Dashboard from './pages/Dashboard';
 import Arena from './pages/Arena';
 import Leaderboard from './pages/Leaderboard';
@@ -46,6 +47,14 @@ function AppContent() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route
+              path="/choose-username"
+              element={
+                <ProtectedRoute>
+                  <ChooseUsername />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<ContactUs />} />
             <Route

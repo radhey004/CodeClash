@@ -19,6 +19,7 @@ interface LeaderboardEntry {
   winRate: string;
   seasonParticipated?: boolean;
   isCurrentUser?: boolean;
+  avatar?: string;
 }
 
 interface MyLeagueData {
@@ -123,7 +124,18 @@ const Leaderboard = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
+                    {entry.avatar ? (
+                      <img
+                        src={entry.avatar}
+                        alt={entry.username}
+                        className="w-8 h-8 rounded-full object-cover border border-cyan-500"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        {entry.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <span className={`font-semibold ${entry.isCurrentUser ? 'text-cyan-400' : 'text-white'}`}>
                       {entry.username}
                       {entry.isCurrentUser && <span className="ml-2 text-xs text-cyan-400">(You)</span>}

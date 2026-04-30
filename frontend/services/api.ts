@@ -12,6 +12,7 @@ const fetchAPI = async (url: string, options: RequestInit = {}) => {
   const response = await fetch(url, options);
   let data;
   const contentType = response.headers.get('content-type');
+
   if (contentType && contentType.includes('application/json')) {
     try {
       data = await response.json();
@@ -21,9 +22,13 @@ const fetchAPI = async (url: string, options: RequestInit = {}) => {
   } else {
     // Try to get text for debugging
     const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status} ${response.statusText}${text ? ': ' + text : ''}`);
+    }
     throw new Error(`Expected JSON but got: ${text || 'empty response'}`);
   }
-  if (!response.ok) throw new Error(data?.message || 'Request failed');
+
+  if (!response.ok) throw new Error(data?.message || `Request failed with status ${response.status}`);
   return data;
 };
 
@@ -42,6 +47,13 @@ export const authAPI = {
       body: JSON.stringify({ email, password })
     }),
 
+  firebaseLogin: (idToken: string) =>
+    fetchAPI(`${API_URL}/auth/firebase`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    }),
+
   getMe: () => fetchAPI(`${API_URL}/auth/me`, { headers: getAuthHeader() }),
 
   forgotPassword: (email: string) =>
@@ -57,6 +69,50 @@ export const authAPI = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password })
     })
+};
+
+export const userAPI = {
+  updateUsername: (username: string) =>
+    fetchAPI(`${API_URL}/users/username`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    }),
+
+  uploadAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const response = await fetch(`${API_URL}/users/avatar`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: formData
+      });
+
+      let data: any = null;
+      const contentType = response.headers.get('content-type');
+
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error('Invalid JSON response from server.');
+        }
+      } else if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Upload failed: ${response.status} ${response.statusText}`);
+      } else {
+        throw new Error('Expected JSON response from server.');
+      }
+
+      if (!response.ok) throw new Error(data?.message || 'Upload failed');
+      return data;
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      throw error;
+    }
+  }
 };
 
 export const problemAPI = {

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { battleAPI } from '../services/api';
-import { Trophy, Target, TrendingUp, Clock, Award, Flame, Users } from 'lucide-react';
+import { battleAPI, userAPI } from '../services/api';
+import { Trophy, Target, TrendingUp, Clock, Award, Flame, Users, Camera } from 'lucide-react';
 
 interface Battle {
   _id: string;
@@ -21,12 +21,14 @@ interface Battle {
 }
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const [battles, setBattles] = useState<Battle[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBattle, setSelectedBattle] = useState<Battle | null>(null);
   const [showProblemModal, setShowProblemModal] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadBattles();
@@ -46,6 +48,23 @@ const Profile = () => {
   const handleBattleClick = (battle: Battle) => {
     setSelectedBattle(battle);
     setShowProblemModal(true);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarUploading(true);
+    try {
+      const data = await userAPI.uploadAvatar(file);
+      if (user) {
+        updateUser({ ...user, avatar: data.avatar });
+      }
+    } catch (error) {
+      console.error('Avatar upload failed:', error);
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   const winRate = user?.totalBattles ? Math.min(((user.wins || 0) / user.totalBattles * 100), 100).toFixed(1) : 0;
@@ -75,8 +94,37 @@ const Profile = () => {
         <div className="bg-gray-800 border border-cyan-500/30 rounded-lg p-8 mb-8">
           <div className="flex items-start space-x-8">
             <div className="flex-shrink-0">
-              <div className="w-32 h-32 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-5xl font-bold text-white">{user?.level}</span>
+              <div className="relative group">
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.username}
+                    className="w-32 h-32 rounded-full object-cover border-3 border-cyan-500 shadow-lg shadow-cyan-500/20"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-5xl font-bold text-white">{user?.level}</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <Camera className="w-8 h-8 text-white" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+                {avatarUploading && (
+                  <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-medium">Uploading...</span>
+                  </div>
+                )}
               </div>
               <div className={`mt-4 text-center bg-gradient-to-r ${rankColor} text-white px-4 py-2 rounded-lg font-bold shadow-lg`}>
                 {displayRank}
